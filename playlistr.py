@@ -14,12 +14,6 @@ class spotify_state:
 spotify_st: spotify_state = spotify_state()
 
 
-def get_secrets():
-    with open("secrets.json") as f:
-        secrets = json.load(f)
-    return secrets
-
-
 def spotify_auth_url():
     secrets = get_secrets()
     params = {
