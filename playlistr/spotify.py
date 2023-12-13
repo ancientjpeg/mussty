@@ -1,19 +1,18 @@
-from . import service_base
+from . import secrets
 import requests as r
 from requests_oauthlib import OAuth2Session
 
 
-class Spotify(service_base.ServiceBase):
-    ready: bool = False
-    client_id: str
-    client_secret: str
-    auth_code: str
-    session: OAuth2Session
-
+class Spotify:
     def __init__(self) -> None:
         super().__init__()
-        self.client_id = self.secrets["spotify"]["client_id"]
-        self.client_secret = self.secrets["spotify"]["client_secret"]
+        self.client_id: str = secrets.get()["spotify"]["client_id"]
+        self.client_secret: str = secrets.get()["spotify"]["client_secret"]
+        self.scope = ["user-read-email"]
+        self.ready: bool = False
+        self.auth_code: str
+        # self.redirect_uri
+        # self.session: OAuth2Session = OAuth2Session(self.client_id, scope=self.scope, redirect_uri=
 
     @staticmethod
     def spotify_auth_url_base():
@@ -22,6 +21,10 @@ class Spotify(service_base.ServiceBase):
     @staticmethod
     def spotify_api_url_base():
         return "https://accounts.spotify.com/api"
+
+    @staticmethod
+    def spotify_token_url_base():
+        return Spotify.spotify_api_url_base() + "/token"
 
     def spotify_auth_url(self):
         params = {
