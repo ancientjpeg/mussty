@@ -19,9 +19,15 @@ class PlaylistrCallbackHandler(BaseHTTPRequestHandler):
 
         parsed_path = parse.urlparse(self.path)
         parsed_qs = dict(parse.parse_qsl(parsed_path.query))
-        session["parsed_qs"] = parsed_qs
-        self.send_response(200, message="Plz close the tab :)")
-        self.server.event.set()
+
+        path = parsed_path.path
+
+        if path == "/spotify-callback":
+            session["spotify_auth_code"] = parsed_qs["code"]
+            self.send_response(200)
+            self.server.event.set()
+        else:
+            self.send_response(400)
 
 
 class Playlistr:
@@ -33,7 +39,6 @@ class Playlistr:
     event: threading.Event
 
     def __new__(cls):
-        print("NEW PLAYLISTR")
         if cls.exists:
             raise RuntimeError("Don't make more than one Playlistr object.")
 
@@ -50,8 +55,14 @@ class Playlistr:
         return instance
 
     def perform_spotify_auth(self):
-        print(f"Authorize spotify: {self.spotify.spotify_auth_url()}")
+        print(f"\nAuthorize spotify: {self.spotify.spotify_auth_url()}\n\n")
         self.event.wait()
+        self.spotify.auth_code = self.session["spotify_auth_code"]
+        self.spotify.get_token()
+        self.spotify.get_tracks()
+
+    def perform_apple_auth(self):
+        ...
 
     def run(self):
         self.server_thread = threading.Thread(
