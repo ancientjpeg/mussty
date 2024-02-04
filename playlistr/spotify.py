@@ -1,7 +1,7 @@
 from . import secrets
 import requests as r
-from requests_oauthlib import OAuth2Session
 import base64
+from .auth_server import PlaylistrAuthCallbackHandler
 
 
 class Spotify:
@@ -22,11 +22,22 @@ class Spotify:
         self.access_token: str = ""
         self.refresh_token: str = ""
 
-        # self.redirect_uri
-        # self.session: OAuth2Session = OAuth2Session(self.client_id, scope=self.scope, redirect_uri=
+        try:
+            self.access_token = secrets.get()["spotify"]["access_token"]
+        except KeyError:
+            print("No pre-existing access token available for Spotify.")
+
+        try:
+            self.refresh_token = secrets.get()["spotify"]["refresh_token"]
+        except KeyError:
+            print("No pre-existing refresh token available for Spotify.")
+
+        handler = PlaylistrAuthCallbackHandler(self.auth_url())
+        self.auth_code = handler.get_auth_params()["code"]
+        self.get_token()
 
     @staticmethod
-    def spotify_api_url_base():
+    def api_url_base():
         return "https://api.spotify.com/v1"
 
     @staticmethod
@@ -34,27 +45,28 @@ class Spotify:
         return "http://localhost:8005/spotify-callback"
 
     @staticmethod
-    def spotify_auth_url_base():
+    def auth_url_base():
         return "https://accounts.spotify.com/authorize"
 
     @staticmethod
-    def spotify_accounts_api_url_base():
+    def accounts_api_url_base():
         return "https://accounts.spotify.com/api"
 
     @staticmethod
-    def spotify_token_url_base():
-        return Spotify.spotify_accounts_api_url_base() + "/token"
+    def token_url_base():
+        return Spotify.accounts_api_url_base() + "/token"
 
-    def spotify_auth_url(self):
+    def auth_url(self):
         params = {
             "client_id": self.client_id,
             "response_type": "code",
             "redirect_uri": self.redirect_uri(),
+            "scope": " ".join(self.scope),
         }
         headers = {}
         req = r.Request(
             "GET",
-            self.spotify_auth_url_base(),
+            self.auth_url_base(),
             params=params,
             headers=headers,
         )
@@ -68,25 +80,23 @@ class Spotify:
             "redirect_uri": self.redirect_uri(),
         }
         auth = f"{self.client_id}:{self.client_secret}"
-        print(auth)
         auth = base64.b64encode(auth.encode("ascii")).decode("ascii")
-        print(auth)
         headers = {
             "Authorization": f"Basic {auth}",
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-        res = r.post(self.spotify_token_url_base(), params=params, headers=headers)
+        res = r.post(self.token_url_base(), params=params, headers=headers)
         res = res.json()
 
         self.access_token = res["access_token"]
         self.refresh_token = res["refresh_token"]
-        print(f"spotify access token: {self.access_token}")
 
     def get_tracks(self):
-        url = self.spotify_api_url_base() + "/me/tracks"
-        res = r.Request(url=url, headers=self.auth_headers())
+        url = self.api_url_base() + "/me/tracks"
+        res = r.get(url=url, headers=self.auth_headers())
         res = res.json()
+        print(res)
 
     def auth_headers(self):
         return {"Authorization": f"Bearer {self.access_token}"}
