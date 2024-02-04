@@ -24,6 +24,7 @@ class Album:
 @dataclass
 class Playlist:
     id: str
+    title: str
     url: str
     songs: list[Song]
 
@@ -37,6 +38,7 @@ class Service:
     def __init__(self):
         self.songs = {}
         self.playlists = {}
+        self.albums = {}
 
     def get_user_content(self):
         # @todo this should be considered "pure virtual" - look into @abstractmethod

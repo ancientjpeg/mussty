@@ -2,7 +2,7 @@ from . import secrets
 import requests as r
 import base64
 from .auth_server import PlaylistrAuthCallbackHandler
-from .service import Service, Artist, Song, Playlist
+from .service import Service, Artist, Album, Song, Playlist
 
 
 class Spotify(Service):
@@ -97,8 +97,57 @@ class Spotify(Service):
         while get_tracks_page():
             pass
 
+    def get_albums(self):
+        api_url = self.api_url_base() + "/me/albums"
+
+        offset = 0
+
+        def get_albums_page():
+            body = None
+            params = {"limit": 50, "offset": offset}
+            res = r.get(url=api_url, params=params, headers=self.auth_headers())
+            body = res.json()
+            for item in body["items"]:
+
+                album = item["album"]
+                id = album["id"]
+                title = album["name"]
+                artist_json = album["artists"][0]
+                artist: Artist = Artist(artist_json["id"], artist_json["name"])
+
+                self.add_album(Album(id, title, artist))
+            return body["next"]
+
+        while get_albums_page():
+            pass
+
+    # @todo unimplemented
+    def get_playlists(self):
+        api_url = self.api_url_base() + "/me/playlists"
+
+        offset = 0
+
+        def get_playlist_page():
+            body = None
+            params = {"limit": 50, "offset": offset}
+            res = r.get(url=api_url, params=params, headers=self.auth_headers())
+            body = res.json()
+            for playlist in body["items"]:
+
+                id = playlist["id"]
+                title = playlist["name"]
+                print(title)
+                print(playlist["owner"])
+
+            return body["next"]
+
+        while get_playlist_page():
+            pass
+
     def get_user_content(self):
         self.get_tracks()
+        self.get_albums()
+        self.get_playlists()
 
     def auth_headers(self):
         return {"Authorization": f"Bearer {self.access_token}"}
