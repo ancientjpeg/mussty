@@ -173,11 +173,6 @@ class Spotify(Service):
         while get_playlist_page():
             pass
 
-    def get_user_content(self):
-        self.get_tracks()
-        self.get_albums()
-        self.get_playlists()
-
     def auth_headers(self):
         return {"Authorization": f"Bearer {self.access_token}"}
 

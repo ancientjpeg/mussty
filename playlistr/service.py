@@ -41,8 +41,10 @@ class Service:
         self.albums = {}
 
     def get_user_content(self):
-        # @todo this should be considered "pure virtual" - look into @abstractmethod
-        assert False
+        # @todo just calling these and hoping they're implemented is horrifically stupid, look into @abstractmethod
+        self.get_tracks()
+        self.get_albums()
+        self.get_playlists()
 
     def add_album(self, album: Album):
         self.add_generic(album, self.albums)
