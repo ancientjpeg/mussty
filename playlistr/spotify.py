@@ -160,6 +160,9 @@ class Spotify(Service):
             body = res.json()
             for playlist in body["items"]:
 
+                if playlist["owner"]["id"] != self.user_id:
+                    continue
+
                 id = playlist["id"]
                 title = playlist["name"]
                 print(title)
