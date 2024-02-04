@@ -2,9 +2,10 @@ from . import secrets
 import requests as r
 import base64
 from .auth_server import PlaylistrAuthCallbackHandler
+from .service import Service, Artist, Song, Playlist
 
 
-class Spotify:
+class Spotify(Service):
     def __init__(self) -> None:
         super().__init__()
         self.client_id: str = secrets.get()["spotify"]["client_id"]
@@ -35,26 +36,6 @@ class Spotify:
         handler = PlaylistrAuthCallbackHandler(self.auth_url())
         self.auth_code = handler.get_auth_params()["code"]
         self.get_token()
-
-    @staticmethod
-    def api_url_base():
-        return "https://api.spotify.com/v1"
-
-    @staticmethod
-    def redirect_uri():
-        return "http://localhost:8005/spotify-callback"
-
-    @staticmethod
-    def auth_url_base():
-        return "https://accounts.spotify.com/authorize"
-
-    @staticmethod
-    def accounts_api_url_base():
-        return "https://accounts.spotify.com/api"
-
-    @staticmethod
-    def token_url_base():
-        return Spotify.accounts_api_url_base() + "/token"
 
     def auth_url(self):
         params = {
@@ -93,10 +74,51 @@ class Spotify:
         self.refresh_token = res["refresh_token"]
 
     def get_tracks(self):
-        url = self.api_url_base() + "/me/tracks"
-        res = r.get(url=url, headers=self.auth_headers())
-        res = res.json()
-        print(res)
+        api_url = self.api_url_base() + "/me/tracks"
+
+        offset = 0
+
+        def get_tracks_page():
+            body = None
+            params = {"limit": 50, "offset": offset}
+            res = r.get(url=api_url, params=params, headers=self.auth_headers())
+            body = res.json()
+            for item in body["items"]:
+
+                track = item["track"]
+                id = track["id"]
+                title = track["name"]
+                artist_json = track["artists"][0]
+                artist: Artist = Artist(artist_json["id"], artist_json["name"])
+
+                self.add_song(Song(id, title, artist))
+            return body["next"]
+
+        while get_tracks_page():
+            pass
+
+    def get_user_content(self):
+        self.get_tracks()
 
     def auth_headers(self):
         return {"Authorization": f"Bearer {self.access_token}"}
+
+    @staticmethod
+    def api_url_base():
+        return "https://api.spotify.com/v1"
+
+    @staticmethod
+    def redirect_uri():
+        return "http://localhost:8005/spotify-callback"
+
+    @staticmethod
+    def auth_url_base():
+        return "https://accounts.spotify.com/authorize"
+
+    @staticmethod
+    def accounts_api_url_base():
+        return "https://accounts.spotify.com/api"
+
+    @staticmethod
+    def token_url_base():
+        return Spotify.accounts_api_url_base() + "/token"
