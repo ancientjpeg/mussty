@@ -15,6 +15,13 @@ class Song:
 
 
 @dataclass
+class Album:
+    id: str
+    title: str
+    artist: Artist
+
+
+@dataclass
 class Playlist:
     id: str
     url: str
@@ -24,6 +31,7 @@ class Playlist:
 class Service:
     # id -> record dicts
     songs: dict[str, Song]
+    albums: dict[str, Album]
     playlists: dict[str, Playlist]
 
     def __init__(self):
@@ -34,17 +42,18 @@ class Service:
         # @todo this should be considered "pure virtual" - look into @abstractmethod
         assert False
 
-    def add_song(self, song: Song):
-        if song.id in self.songs:
-            assert song == self.songs[song.id]
-            return
+    def add_album(self, album: Album):
+        self.add_generic(album, self.albums)
 
-        self.songs[song.id] = song
+    def add_song(self, song: Song):
+        self.add_generic(song, self.songs)
 
     def add_playlist(self, playlist: Playlist):
+        self.add_generic(playlist, self.playlists)
 
-        if playlist.id in self.playlists:
-            assert playlist == self.playlists[playlist.id]
+    def add_generic(self, record, list):
+        if record.id in list:
+            assert record == list[record.id]
             return
 
-        self.playlists[playlist.id] = playlist
+        list[record.id] = record
