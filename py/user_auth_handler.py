@@ -33,6 +33,16 @@ class UserAuthHTTPRequestHandlerBase(BaseHTTPRequestHandler):
 
         return self_wrapper
 
+    def return_successfully(self):
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        print(self.server.query_dict)
+        self.end_headers()
+        self.wfile.write(
+            '{"message":"success. please close your fucking browser now :)"}'.encode()
+        )
+        self.server.event.set()
+
 
 class UserAuthHandlerBase:
     # constructor is non-blocking.

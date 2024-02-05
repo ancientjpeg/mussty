@@ -1,7 +1,7 @@
 from . import secrets
 import requests as r
 import base64
-from .auth_server import (
+from .user_auth_handler import (
     UserAuthHandlerBase,
     UserAuthHTTPRequestHandlerBase,
 )
@@ -12,15 +12,7 @@ class SpotifyUserAuthHTTPRequestHandler(UserAuthHTTPRequestHandlerBase):
 
     @UserAuthHTTPRequestHandlerBase.do_GET_decorator
     def do_GET(self):
-        # annotate server
-
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-        self.wfile.write(
-            '{"message":"success. please close your fucking browser now :)"}'.encode()
-        )
-        self.server.event.set()
+        self.return_successfully()
 
 
 class SpotifyUserAuthHandler(UserAuthHandlerBase):

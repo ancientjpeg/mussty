@@ -2,7 +2,7 @@ from .service import Service
 from . import secrets
 import jwt
 from datetime import datetime, timedelta
-from .auth_server import (
+from .user_auth_handler import (
     UserAuthHandlerBase,
     UserAuthHTTPRequestHandlerBase,
 )
@@ -24,14 +24,7 @@ class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
                     self.wfile.write(f.read().encode())
 
             case "/authorize":
-                self.send_response(200)
-                self.send_header("Content-type", "application/json")
-                print(self.server.query_dict)
-                self.end_headers()
-                self.wfile.write(
-                    '{"message":"success. please close your fucking browser now :)"}'.encode()
-                )
-                self.server.event.set()
+                self.return_successfully()
             case _:
                 self.send_response(400)
                 self.server.event.set()
