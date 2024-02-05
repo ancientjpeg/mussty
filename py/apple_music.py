@@ -1,15 +1,14 @@
-from .service import Service
 from . import secrets
-import jwt
-from datetime import datetime, timedelta
+from .service import Service
 from .user_auth_handler import (
     UserAuthHandler,
     UserAuthHTTPRequestHandlerBase,
 )
-import requests as r
-import webbrowser
+from datetime import datetime, timedelta
 import json
+import jwt
 import re
+import requests as r
 
 
 class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
@@ -71,7 +70,8 @@ class AppleMusic(Service):
 
         if has_music_user_token:
             res = r.get(
-                self.api_url_base() + "/me/storefront", headers=self.auth_headers()
+                self.api_url_base() + "/me/library/playlists",
+                headers=self.auth_headers(),
             )
             has_music_user_token = res.ok
 
@@ -88,10 +88,11 @@ class AppleMusic(Service):
         secrets.set(secrets_json)
 
     def get_tracks(self):
-        api_url = self.api_url_base() + "/me/library/songs?offset=0"
-        res = r.get(api_url, headers=self.auth_headers())
-        print(json.dumps(res.json(), indent=2))
-        print(self.offset_from_response(res.json()))
+        api_url = self.api_url_base() + "/me/library/songs?offset="
+        offset = 0
+        res = r.get(api_url + offset, headers=self.auth_headers())
+        print(json.dumps(res.json()["data"][0], indent=2))
+        print(f"offset: {self.offset_from_response(res.json())}")
         pass
 
     def get_albums(self):
