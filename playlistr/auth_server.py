@@ -3,7 +3,7 @@ import threading
 from urllib import parse
 
 
-class PlaylistrCallbackServer(HTTPServer):
+class UserAuthHTTPServer(HTTPServer):
     event: threading.Event
     parsed_path: parse.ParseResult
     query_dict: dict
@@ -15,30 +15,29 @@ class PlaylistrCallbackServer(HTTPServer):
         HTTPServer.server_bind(self)
 
 
-class PlaylistrCallbackRequestHandlerBase(BaseHTTPRequestHandler):
+class UserAuthHTTPRequestHandlerBase(BaseHTTPRequestHandler):
 
-    event: threading.Event() = threading.Event()
-    server: PlaylistrCallbackServer  # annotate the pre-existing server var
+    server: UserAuthHTTPServer  # annotate the pre-existing server var
 
     # use this to decorate handler methods
+    # be sure to do server.event.set() when you're totally done. @todo that's stupid, do nested decorators or something
     # @todo name this something that isn't stupid
     @staticmethod
     def do_GET_decorator(func):
-        def self_wrapper(self: PlaylistrCallbackRequestHandlerBase):
+        def self_wrapper(self: UserAuthHTTPRequestHandlerBase):
             self.server.parsed_path = parse.urlparse(self.path)
             self.server.query_dict = dict(
                 parse.parse_qsl(self.server.parsed_path.query)
             )
             func(self)
-            self.server.event.set()
 
         return self_wrapper
 
 
-class PlaylistrAuthCallbackHandler:
+class UserAuthHandlerBase:
     # constructor is non-blocking.
-    def __init__(self, auth_url: str, handler_type) -> None:
-        self.server: PlaylistrCallbackServer = PlaylistrCallbackServer(
+    def __init__(self, handler_type) -> None:
+        self.server: UserAuthHTTPServer = UserAuthHTTPServer(
             ("localhost", 8005), handler_type
         )
         self.server.event: threading.Event = threading.Event()

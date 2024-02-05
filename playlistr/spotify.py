@@ -2,15 +2,15 @@ from . import secrets
 import requests as r
 import base64
 from .auth_server import (
-    PlaylistrAuthCallbackHandler,
-    PlaylistrCallbackRequestHandlerBase,
+    UserAuthHandlerBase,
+    UserAuthHTTPRequestHandlerBase,
 )
 from .service import Service, Artist, Album, Song, Playlist
 
 
-class SpotifyCallbackRequestHandler(PlaylistrCallbackRequestHandlerBase):
+class SpotifyUserAuthHTTPRequestHandler(UserAuthHTTPRequestHandlerBase):
 
-    @PlaylistrCallbackRequestHandlerBase.do_GET_decorator
+    @UserAuthHTTPRequestHandlerBase.do_GET_decorator
     def do_GET(self):
         # annotate server
 
@@ -20,11 +20,12 @@ class SpotifyCallbackRequestHandler(PlaylistrCallbackRequestHandlerBase):
         self.wfile.write(
             '{"message":"success. please close your fucking browser now :)"}'.encode()
         )
+        self.server.event.set()
 
 
-class SpotifyUserAuthHandler(PlaylistrAuthCallbackHandler):
+class SpotifyUserAuthHandler(UserAuthHandlerBase):
     def __init__(self, auth_url: str) -> None:
-        super().__init__(auth_url, SpotifyCallbackRequestHandler)
+        super().__init__(SpotifyUserAuthHTTPRequestHandler)
 
         # @todo make this generic
         print(f"\nAuthorize spotify: {auth_url}\n\n")

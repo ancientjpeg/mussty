@@ -2,7 +2,48 @@ from .service import Service
 from . import secrets
 import jwt
 from datetime import datetime, timedelta
+from .auth_server import (
+    UserAuthHandlerBase,
+    UserAuthHTTPRequestHandlerBase,
+)
 import requests as r
+import webbrowser
+
+
+class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
+
+    @UserAuthHTTPRequestHandlerBase.do_GET_decorator
+    def do_GET(self):
+        path = self.server.parsed_path.path
+        match path:
+            case "/":
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                with open("html/index.html") as f:
+                    self.wfile.write(f.read().encode())
+
+            case "/authorize":
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                print(self.server.query_dict)
+                self.end_headers()
+                self.wfile.write(
+                    '{"message":"success. please close your fucking browser now :)"}'.encode()
+                )
+                self.server.event.set()
+            case _:
+                self.send_response(400)
+                self.server.event.set()
+                raise RuntimeError("Unexpected callback path used.")
+
+        print(self.server.parsed_path.geturl())
+
+
+class AppleMusicUserAuthHandler(UserAuthHandlerBase):
+    def __init__(self) -> None:
+        super().__init__(AppleMusicUserAuthHTTPRequestHandlerBase)
+        webbrowser.open("http://localhost:8005")
 
 
 class AppleMusic(Service):
@@ -34,6 +75,9 @@ class AppleMusic(Service):
 
         self.auth_jwt = encoded_jwt
         print(self.auth_jwt)
+
+        handler = AppleMusicUserAuthHandler()
+        token = handler.get_auth_params()["music-user-token"]
 
         # res = r.get(
         #     "https://api.music.apple.com/v1/catalog/us/albums/1616728060",

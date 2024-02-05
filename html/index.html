@@ -28,9 +28,8 @@
       let music = MusicKit.getInstance();
       let token = await music.authorize();
       console.log(token);
-      // do something with token here
-      // window.location.href +=
-      //   "/authorize?music-user-token=" + encodeURIComponent(token);
+      window.location.href +=
+        "authorize?music-user-token=" + encodeURIComponent(token);
     });
   </script>
 </html>
