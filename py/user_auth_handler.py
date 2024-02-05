@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
 from urllib import parse
+import webbrowser
 
 
 class UserAuthHTTPServer(HTTPServer):
@@ -35,18 +36,17 @@ class UserAuthHTTPRequestHandlerBase(BaseHTTPRequestHandler):
 
     def return_successfully(self):
         self.send_response(200)
-        self.send_header("Content-type", "application/json")
+        self.send_header("Content-type", "text/html")
         print(self.server.query_dict)
         self.end_headers()
-        self.wfile.write(
-            '{"message":"success. please close your fucking browser now :)"}'.encode()
-        )
+        with open("html/success.html") as f:
+            self.wfile.write(f.read().encode())
         self.server.event.set()
 
 
-class UserAuthHandlerBase:
+class UserAuthHandler:
     # constructor is non-blocking.
-    def __init__(self, handler_type) -> None:
+    def __init__(self, auth_url: str, handler_type) -> None:
         self.server: UserAuthHTTPServer = UserAuthHTTPServer(
             ("localhost", 8005), handler_type
         )
@@ -55,6 +55,8 @@ class UserAuthHandlerBase:
             None, target=self.server.serve_forever, daemon=True
         )
         self.server_thread.start()
+
+        webbrowser.open(auth_url)
 
     # this method is blocking, and will not return until the user has authed
     def get_auth_params(self):

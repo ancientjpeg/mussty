@@ -3,7 +3,7 @@ from . import secrets
 import jwt
 from datetime import datetime, timedelta
 from .user_auth_handler import (
-    UserAuthHandlerBase,
+    UserAuthHandler,
     UserAuthHTTPRequestHandlerBase,
 )
 import requests as r
@@ -29,14 +29,6 @@ class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
                 self.send_response(400)
                 self.server.event.set()
                 raise RuntimeError("Unexpected callback path used.")
-
-        print(self.server.parsed_path.geturl())
-
-
-class AppleMusicUserAuthHandler(UserAuthHandlerBase):
-    def __init__(self) -> None:
-        super().__init__(AppleMusicUserAuthHTTPRequestHandlerBase)
-        webbrowser.open("http://localhost:8005")
 
 
 class AppleMusic(Service):
@@ -67,10 +59,12 @@ class AppleMusic(Service):
         )
 
         self.auth_jwt = encoded_jwt
-        print(self.auth_jwt)
 
-        handler = AppleMusicUserAuthHandler()
+        handler = UserAuthHandler(
+            "http://localhost:8005", AppleMusicUserAuthHTTPRequestHandlerBase
+        )
         token = handler.get_auth_params()["music-user-token"]
+        print(token)
 
         # res = r.get(
         #     "https://api.music.apple.com/v1/catalog/us/albums/1616728060",
