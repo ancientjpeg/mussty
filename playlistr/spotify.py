@@ -1,8 +1,33 @@
 from . import secrets
 import requests as r
 import base64
-from .auth_server import PlaylistrAuthCallbackHandler
+from .auth_server import (
+    PlaylistrAuthCallbackHandler,
+    PlaylistrCallbackRequestHandlerBase,
+)
 from .service import Service, Artist, Album, Song, Playlist
+
+
+class SpotifyCallbackRequestHandler(PlaylistrCallbackRequestHandlerBase):
+
+    @PlaylistrCallbackRequestHandlerBase.do_GET_decorator
+    def do_GET(self):
+        # annotate server
+
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        self.wfile.write(
+            '{"message":"success. please close your fucking browser now :)"}'.encode()
+        )
+
+
+class SpotifyUserAuthHandler(PlaylistrAuthCallbackHandler):
+    def __init__(self, auth_url: str) -> None:
+        super().__init__(auth_url, SpotifyCallbackRequestHandler)
+
+        # @todo make this generic
+        print(f"\nAuthorize spotify: {auth_url}\n\n")
 
 
 class Spotify(Service):
@@ -62,7 +87,7 @@ class Spotify(Service):
 
     def get_token(self):
 
-        handler = PlaylistrAuthCallbackHandler(self.auth_url())
+        handler = SpotifyUserAuthHandler(self.auth_url())
         auth_code = handler.get_auth_params()["code"]
 
         params = {

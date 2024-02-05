@@ -16,7 +16,7 @@ class AppleMusic(Service):
         apple_secrets = secrets.get()["apple"]
 
         creation_time = datetime.today()
-        expiry_time = creation_time + timedelta(hours=1)
+        expiry_time = creation_time + timedelta(weeks=1)
 
         headers = {"alg": "ES256", "kid": apple_secrets["private_key_id"]}
         payload = {
@@ -33,6 +33,7 @@ class AppleMusic(Service):
         )
 
         self.auth_jwt = encoded_jwt
+        print(self.auth_jwt)
 
         # res = r.get(
         #     "https://api.music.apple.com/v1/catalog/us/albums/1616728060",

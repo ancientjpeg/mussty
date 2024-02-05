@@ -2,3 +2,4 @@ secrets.json
 test.sh
 *.p8
 **/__pycache__
+node_modules
