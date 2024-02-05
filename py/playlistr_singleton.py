@@ -15,10 +15,3 @@ class Playlistr:
 
         instance = super().__new__(cls)
         return instance
-
-    def spotify_test(self):
-
-        self.spotify.get_user_content()
-
-    def perform_apple_auth(self):
-        pass

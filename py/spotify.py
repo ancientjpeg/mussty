@@ -1,8 +1,24 @@
 from . import secrets
-import requests as r
-import base64
-from .auth_server import PlaylistrAuthCallbackHandler
 from .service import Service, Artist, Album, Song, Playlist
+from .user_auth_handler import (
+    UserAuthHandler,
+    UserAuthHTTPRequestHandlerBase,
+)
+import base64
+import requests as r
+import webbrowser
+
+
+class SpotifyUserAuthHTTPRequestHandler(UserAuthHTTPRequestHandlerBase):
+
+    @UserAuthHTTPRequestHandlerBase.do_GET_decorator
+    def do_GET(self):
+        self.return_successfully()
+
+
+class SpotifyUserAuthHandler(UserAuthHandler):
+    def __init__(self, auth_url: str) -> None:
+        super().__init__()
 
 
 class Spotify(Service):
@@ -62,7 +78,7 @@ class Spotify(Service):
 
     def get_token(self):
 
-        handler = PlaylistrAuthCallbackHandler(self.auth_url())
+        handler = UserAuthHandler(self.auth_url(), SpotifyUserAuthHTTPRequestHandler)
         auth_code = handler.get_auth_params()["code"]
 
         params = {
