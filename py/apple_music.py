@@ -94,6 +94,7 @@ class AppleMusic(Service):
         api_url = self.api_url_base() + "/me/library/songs"
         res = r.get(api_url, headers=self.auth_headers(), params={"limit": 1})
         total = res.json()["meta"]["total"]
+        total = 300  # DEBUG!
         limit = 100
 
         async def get_tracks_page(index: int, offset: int, paginator: Paginator):
@@ -122,9 +123,11 @@ class AppleMusic(Service):
                 for track_json in await data:
                     data = track_json["relationships"]["catalog"]["data"]
                     if len(data) == 0:
-                        raise LocalLibraryContentError(
-                            "Song is not in Apple Music's Catalog"
-                        )
+                        # raise LocalLibraryContentError(
+                        #     "Song is not in Apple Music's Catalog"
+                        # )
+                        print("Song is not in Apple Music's Catalog")
+                        continue
                     attrs = data[0]["attributes"]
                     tracks.append(Song(attrs["isrc"], attrs["name"]))
 
