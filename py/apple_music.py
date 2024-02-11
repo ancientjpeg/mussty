@@ -120,7 +120,7 @@ class AppleMusic(Service):
                         raise RuntimeError("Encountered rate limits. Aborting")
                     raise e
 
-                for track_json in await data:
+                for track_json in data:
                     data = track_json["relationships"]["catalog"]["data"]
                     if len(data) == 0:
                         # raise LocalLibraryContentError(

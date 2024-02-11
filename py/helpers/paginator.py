@@ -9,7 +9,9 @@ class Paginator:
 
     def __init__(self, get_records_list, limit, total) -> None:
 
-        async def get_records(self, get_records_list, limit, total) -> list:
+        self.lock = asyncio.Lock()
+
+        async def get_records(self: Paginator, get_records_list, limit, total) -> list:
             """
             Parameters
             ------------
@@ -30,7 +32,6 @@ class Paginator:
             offsets = [i * limit for i in range(num_tasks)]
 
             tg: asyncio.TaskGroup
-            self.lock = asyncio.Lock()
             task_results = []
             async with aiohttp.ClientSession() as self.session:
                 async with asyncio.TaskGroup() as tg:
@@ -38,12 +39,16 @@ class Paginator:
                         task_result = tg.create_task(
                             get_records_list(i, offsets[i], self)
                         )
+
                         task_results.append(task_result)
 
-            print(task_results[0].result())
-            exit()
+            results = []
+            for task_result in task_results:
+                results.extend(await task_result)
 
-        asyncio.run(get_records(self, get_records_list, limit, total))
+            return results
+
+        self.records = asyncio.run(get_records(self, get_records_list, limit, total))
 
     def __iter__(self):
         yield from self.records

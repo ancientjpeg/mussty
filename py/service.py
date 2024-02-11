@@ -62,8 +62,8 @@ class Service:
         self.add_generic(playlist, self.playlists)
 
     def add_generic(self, record, list):
-        if record.id in list:
-            assert record == list[record.id]
+        if record.isrc in list:
+            assert record == list[record.isrc]
             return
 
-        list[record.id] = record
+        list[record.isrc] = record

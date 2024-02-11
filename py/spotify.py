@@ -6,6 +6,7 @@ from .user_auth_handler import (
 )
 import base64
 import requests as r
+from .helpers.paginator import Paginator
 import webbrowser
 
 
@@ -118,26 +119,42 @@ class Spotify(Service):
     def get_tracks(self):
         api_url = self.api_url_base() + "/me/tracks"
 
-        offset = 0
+        res = r.get(api_url, headers=self.auth_headers())
+        limit = 50
+        total = res.json()["total"]
 
-        def get_tracks_page():
-            body = None
-            params = {"limit": 50, "offset": offset}
-            res = r.get(url=api_url, params=params, headers=self.auth_headers())
-            body = res.json()
-            for item in body["items"]:
+        async def get_tracks_page(index: int, offset: int, paginator: Paginator):
+            params = {
+                "offset": offset,
+                "limit": limit,
+            }
 
-                track = item["track"]
-                id = track["id"]
-                title = track["name"]
-                artist_json = track["artists"][0]
-                artist: Artist = Artist(artist_json["id"], artist_json["name"])
+            tracks = []
 
-                self.add_song(Song(id, title, artist))
-            return body["next"]
+            async with paginator.session.get(
+                api_url, headers=self.auth_headers(), params=params
+            ) as res:
 
-        while get_tracks_page():
-            pass
+                try:
+                    body = await res.json()
+                except Exception as e:
+                    if res.status_code == 429:
+                        raise RuntimeError("Encountered rate limits. Aborting")
+                    raise e
+
+                for item in body["items"]:
+                    track = item["track"]
+                    isrc = track["external_ids"]["isrc"]
+                    title = track["name"]
+
+                    tracks.append(Song(isrc, title))
+
+            return tracks
+
+        tracks = Paginator(get_tracks_page, limit, total)
+
+        for track in tracks:
+            self.add_song(track)
 
     def get_albums(self):
         api_url = self.api_url_base() + "/me/albums"
