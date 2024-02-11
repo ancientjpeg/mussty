@@ -1,4 +1,3 @@
-from .playlistr_singleton import Playlistr
 from .spotify import Spotify
 from .apple_music import AppleMusic
 from time import sleep

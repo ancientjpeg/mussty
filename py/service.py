@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 
 
+class LocalLibraryContentError(Exception):
+    """Raise this error if the record being parsed is local (i.e., user) content."""
+
+
 @dataclass
 class Artist:
     id: str
@@ -9,16 +13,18 @@ class Artist:
 
 @dataclass
 class Song:
-    id: str
+    isrc: str
     title: str
-    artist: Artist
+    ean: str = ""
+    upc: str = ""
 
 
 @dataclass
 class Album:
-    id: str
+    isrc: str
     title: str
-    artist: Artist
+    ean: str = ""
+    upc: str = ""
 
 
 @dataclass

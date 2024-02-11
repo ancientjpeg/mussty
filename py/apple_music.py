@@ -1,5 +1,6 @@
 from . import secrets
-from .service import Service
+from .service import *
+from .helpers.paginator import Paginator
 from .user_auth_handler import (
     UserAuthHandler,
     UserAuthHTTPRequestHandlerBase,
@@ -88,12 +89,33 @@ class AppleMusic(Service):
         secrets.set(secrets_json)
 
     def get_tracks(self):
-        api_url = self.api_url_base() + "/me/library/songs?offset="
-        offset = 0
-        res = r.get(api_url + offset, headers=self.auth_headers())
-        print(json.dumps(res.json()["data"][0], indent=2))
-        print(f"offset: {self.offset_from_response(res.json())}")
-        pass
+        def get_tracks_page(offset):
+            api_url = self.api_url_base() + "/me/library/songs"
+            params = {
+                "offset": offset,
+                "include": "catalog",
+                "extend": ["isrc", "name"],
+            }
+            res = r.get(api_url, headers=self.auth_headers(), params=params)
+
+            new_offset = self.offset_from_response(res.json())
+
+            offset = new_offset if new_offset != offset else -1
+
+            return (res.json()["data"], offset)
+
+        def get_track(track_json):
+            data = track_json["relationships"]["catalog"]["data"]
+            if len(data) == 0:
+                raise LocalLibraryContentError("Song is not in Apple Music's Catalog")
+            attrs = data[0]["attributes"]
+            return Song(attrs["isrc"], attrs["name"])
+
+        tracks = Paginator(get_tracks_page, get_track)
+        for track in tracks:
+            self.add_song(track)
+
+        return tracks
 
     def get_albums(self):
         pass
@@ -117,4 +139,4 @@ class AppleMusic(Service):
         path = res["next"]
         find = re.findall("(offset)=(\\d+)", path)
         assert len(find) == 1
-        return find[0][1]
+        return int(find[0][1])
