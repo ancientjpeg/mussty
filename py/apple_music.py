@@ -10,6 +10,8 @@ import json
 import jwt
 import re
 import requests as r
+import asyncio
+import aiohttp
 
 
 class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
@@ -94,7 +96,7 @@ class AppleMusic(Service):
         total = res.json()["meta"]["total"]
         limit = 100
 
-        def get_tracks_page(offset):
+        async def get_tracks_page(index: int, offset: int, paginator: Paginator):
 
             params = {
                 "offset": offset,
@@ -102,22 +104,33 @@ class AppleMusic(Service):
                 "limit": 100,
                 "extend": ["isrc", "name"],
             }
-            res = r.get(api_url, headers=self.auth_headers(), params=params)
 
-            new_offset = self.offset_from_response(res.json())
+            tracks = []
+            async with paginator.session.get(
+                api_url, headers=self.auth_headers(), params=params
+            ) as res:
 
-            offset = new_offset if new_offset != offset else -1
+                data = None
+                try:
+                    body = await res.json()["data"]
+                    data = body["data"]
+                except Exception as e:
+                    if res.status_code == 429:
+                        raise RuntimeError("Encountered rate limits. Aborting")
+                    raise e
 
-            return (res.json()["data"], offset)
+                for track_json in await data:
+                    data = track_json["relationships"]["catalog"]["data"]
+                    if len(data) == 0:
+                        raise LocalLibraryContentError(
+                            "Song is not in Apple Music's Catalog"
+                        )
+                    attrs = data[0]["attributes"]
+                    tracks.append(Song(attrs["isrc"], attrs["name"]))
 
-        def parse_track(track_json):
-            data = track_json["relationships"]["catalog"]["data"]
-            if len(data) == 0:
-                raise LocalLibraryContentError("Song is not in Apple Music's Catalog")
-            attrs = data[0]["attributes"]
-            return Song(attrs["isrc"], attrs["name"])
+            return tracks
 
-        tracks = Paginator(get_tracks_page, parse_track, limit, total)
+        tracks = Paginator(get_tracks_page, limit, total)
         for track in tracks:
             self.add_song(track)
 
@@ -137,14 +150,3 @@ class AppleMusic(Service):
     @staticmethod
     def api_url_base():
         return "https://api.music.apple.com/v1"
-
-    @staticmethod
-    def offset_from_response(res):
-
-        try:
-            path = res["next"]
-        except KeyError:
-            return -1
-        find = re.findall("(offset)=(\\d+)", path)
-        assert len(find) == 1
-        return int(find[0][1])
