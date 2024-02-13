@@ -63,7 +63,7 @@ class Service:
 
     def add_generic(self, record, list):
         if record.isrc in list:
-            assert record == list[record.isrc]
+            print(f"duplicate songs: {record.title} --- {list[record.isrc].title}")
             return
 
         list[record.isrc] = record

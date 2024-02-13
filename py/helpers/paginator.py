@@ -33,18 +33,25 @@ class Paginator:
 
             tg: asyncio.TaskGroup
             task_results = []
-            async with aiohttp.ClientSession() as self.session:
-                async with asyncio.TaskGroup() as tg:
-                    for i in range(len(offsets)):
-                        task_result = tg.create_task(
-                            get_records_list(i, offsets[i], self)
-                        )
+            try:
+                async with aiohttp.ClientSession() as self.session:
+                    async with asyncio.TaskGroup() as tg:
+                        for i in range(len(offsets)):
+                            task_result = tg.create_task(
+                                get_records_list(i, offsets[i], self)
+                            )
+                            task_results.append(task_result)
 
-                        task_results.append(task_result)
+                            # apple music does not like being flooded with a bunch of requests at once
+                            await asyncio.sleep(0.05)
+
+            except* Exception as e:
+                print(e.exceptions)
+                raise Exception("Paginator experienced unhandled exceptions")
 
             results = []
             for task_result in task_results:
-                results.extend(await task_result)
+                results.extend(task_result.result())
 
             return results
 
