@@ -159,50 +159,72 @@ class Spotify(Service):
     def get_albums(self):
         api_url = self.api_url_base() + "/me/albums"
 
-        offset = 0
+        res = r.get(api_url, headers=self.auth_headers())
+        limit = 50
+        total = res.json()["total"]
 
-        def get_albums_page():
-            body = None
-            params = {"limit": 50, "offset": offset}
-            res = r.get(url=api_url, params=params, headers=self.auth_headers())
-            body = res.json()
-            for item in body["items"]:
-                album = item["album"]
+        async def get_albums_page(offset: int, paginator: Paginator):
 
-                isrc = album["external_ids"]["isrc"]
-                title = album["name"]
+            albums = []
+            params = {"limit": limit, "offset": offset}
+            async with paginator.session.get(
+                api_url, headers=self.auth_headers(), params=params
+            ) as res:
+                body = await res.json()
+                for item in body["items"]:
+                    album = item["album"]
 
-                self.add_album(Album(isrc, title))
-            return body["next"]
+                    upc = ""
+                    try:
+                        isrc = album["external_ids"]["isrc"]
+                    except KeyError:
+                        isrc = ""
+                        upc = album["external_ids"]["upc"]
 
-        while get_albums_page():
-            pass
+                    title = album["name"]
+
+                    albums.append(Album(isrc, title, upc=upc))
+
+                return albums
+
+        albums = Paginator(get_albums_page, limit, total)
+
+        for album in albums:
+            self.add_album(album)
 
     # @todo unimplemented
     def get_playlists(self):
         api_url = self.api_url_base() + "/me/playlists"
 
-        offset = 0
+        res = r.get(api_url, headers=self.auth_headers())
+        total = res.json()["total"]
 
-        def get_playlist_page():
-            body = None
-            params = {"limit": 50, "offset": offset}
-            res = r.get(url=api_url, params=params, headers=self.auth_headers())
-            body = res.json()
-            for playlist in body["items"]:
+        limit = 50
 
-                if playlist["owner"]["id"] != self.user_id:
-                    continue
+        async def get_playlist_page(offset: int, paginator: Paginator):
+            playlists = []
+            params = {"limit": limit, "offset": offset}
+            async with paginator.session.get(
+                api_url, headers=self.auth_headers(), params=params
+            ) as res:
+                body = await res.json()
+                for playlist in body["items"]:
 
-                id = playlist["id"]
-                title = playlist["name"]
-                print(title)
-                print(playlist["owner"])
+                    if playlist["owner"]["id"] != self.user_id:
+                        continue
 
-            return body["next"]
+                    id = playlist["id"]
+                    title = playlist["name"]
 
-        while get_playlist_page():
-            pass
+                    playlists.append(Playlist(id, title, "", []))
+
+                return playlists
+
+        playlists = Paginator(get_playlist_page, limit, total)
+        print(playlists.records)
+
+        # for playlist in playlists:
+        #     self.add_playlist(playlist)
 
     def auth_headers(self):
         return {"Authorization": f"Bearer {self.access_token}"}
