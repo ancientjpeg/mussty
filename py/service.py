@@ -15,23 +15,22 @@ class Artist:
 class Song:
     isrc: str
     title: str
+    album_upc: str
     ean: str = ""
     upc: str = ""
 
 
 @dataclass
 class Album:
-    isrc: str
+    upc: str
     title: str
     ean: str = ""
-    upc: str = ""
 
 
 @dataclass
 class Playlist:
     id: str
     title: str
-    url: str
     songs: list[Song]
 
 
@@ -62,8 +61,14 @@ class Service:
         self.add_generic(playlist, self.playlists)
 
     def add_generic(self, record, list):
-        if record.isrc in list:
-            print(f"duplicate songs: {record.title} --- {list[record.isrc].title}")
+
+        try:
+            id = record.isrc
+        except:
+            id = record.upc
+
+        if id in list:
+            # print(f"duplicate records: {record.title} --- {list[record.isrc].title}")
             return
 
-        list[record.isrc] = record
+        list[id] = record

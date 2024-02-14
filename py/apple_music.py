@@ -94,15 +94,18 @@ class AppleMusic(Service):
         api_url = self.api_url_base() + "/me/library/songs"
         res = r.get(api_url, headers=self.auth_headers(), params={"limit": 1})
         total = res.json()["meta"]["total"]
+        total = 100  # TEST!
         limit = 100
 
         async def get_tracks_page(offset: int, paginator: Paginator):
 
             params = {
                 "offset": offset,
-                "include": "catalog",
                 "limit": 100,
-                "extend": ["isrc", "name"],
+                "include": ["albums,catalog"],
+                "extend[songs]": ["isrc,name"],
+                "include[library-albums]": ["catalog"],
+                "extend[albums]": ["upc"],
             }
 
             tracks = []
@@ -116,16 +119,25 @@ class AppleMusic(Service):
                     data = body["data"]
                 except Exception as e:
                     if res.status == 429:
-                        raise RuntimeError("Encountered rate limits. Aborting")
+                        raise RuntimeError("Encountered rate limits.")
                     raise e
 
                 for track_json in data:
+
                     data = track_json["relationships"]["catalog"]["data"]
-                    if len(data) == 0:
+                    album_data = track_json["relationships"]["albums"]["data"][0]
+                    catalog_album_data = album_data["relationships"]["catalog"]["data"]
+
+                    if len(data) == 0 or len(catalog_album_data) == 0:
+                        # @todo handle out-of-catalog records
                         # print("Song is not in Apple Music's Catalog")
                         continue
                     attrs = data[0]["attributes"]
-                    tracks.append(Song(attrs["isrc"], attrs["name"]))
+                    album_attrs = catalog_album_data[0]["attributes"]
+
+                    tracks.append(
+                        Song(attrs["isrc"], attrs["name"], album_attrs["upc"])
+                    )
 
             return tracks
 
@@ -134,11 +146,96 @@ class AppleMusic(Service):
             self.add_song(track)
 
     def get_albums(self):
-        pass
+        api_url = self.api_url_base() + "/me/library/albums"
+        res = r.get(api_url, headers=self.auth_headers(), params={"limit": 1})
+        total = res.json()["meta"]["total"]
+        limit = 100
+
+        async def get_albums_page(offset: int, paginator: Paginator):
+
+            params = {
+                "offset": offset,
+                "limit": 100,
+                "include": ["catalog"],
+                "extend[albums]": ["upc"],
+            }
+
+            albums = []
+            async with paginator.session.get(
+                api_url, headers=self.auth_headers(), params=params
+            ) as res:
+
+                data = None
+                try:
+                    body = await res.json()
+                    data = body["data"]
+                except Exception as e:
+                    if res.status == 429:
+                        raise RuntimeError("Encountered rate limits.")
+                    raise e
+
+                for track_json in data:
+
+                    data = track_json["relationships"]["catalog"]["data"]
+
+                    if len(data) == 0:
+                        # @todo handle out-of-catalog records
+                        # print("Song is not in Apple Music's Catalog")
+                        continue
+                    attrs = data[0]["attributes"]
+
+                    albums.append(Album(attrs["upc"], attrs["name"]))
+
+            return albums
+
+        albums = Paginator(get_albums_page, limit, total)
+        for album in albums:
+            self.add_song(album)
 
     # @todo unimplemented
     def get_playlists(self):
-        pass
+        api_url = self.api_url_base() + "/me/library/playlists"
+        res = r.get(api_url, headers=self.auth_headers(), params={"limit": 1})
+        total = res.json()["meta"]["total"]
+        limit = 100
+
+        async def get_playlists_page(offset: int, paginator: Paginator):
+
+            params = {
+                "offset": offset,
+                "limit": 100,
+                "include[library-songs]": ["catalog"],
+                "extend[songs]": ["isrc,name"],
+            }
+
+            playlist_map ={} 
+            async with paginator.session.get(
+                api_url, headers=self.auth_headers(), params=params
+            ) as res:
+
+                data = None
+                try:
+                    body = await res.json()
+                    data = body["data"]
+                except Exception as e:
+                    if res.status == 429:
+                        raise RuntimeError("Encountered rate limits.")
+                    raise e
+
+                for playlist_json in data:
+
+                    id = playlist_json["id"]
+                    name = playlist_json["attributes"]["name"]
+
+                    playlist_map[id] = Playlist(id, name, [])
+
+            async with paginator.session.get():
+
+            return playlist_map
+
+        playlists = Paginator(get_playlists_page, limit, total)
+        for playlist in playlists:
+            self.add_song(playlist)
 
     def auth_headers(self):
         return {

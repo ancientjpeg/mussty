@@ -174,16 +174,11 @@ class Spotify(Service):
                 for item in body["items"]:
                     album = item["album"]
 
-                    upc = ""
-                    try:
-                        isrc = album["external_ids"]["isrc"]
-                    except KeyError:
-                        isrc = ""
-                        upc = album["external_ids"]["upc"]
+                    upc = album["external_ids"]["upc"]
 
                     title = album["name"]
 
-                    albums.append(Album(isrc, title, upc=upc))
+                    albums.append(Album(upc, title))
 
                 return albums
 
@@ -192,7 +187,6 @@ class Spotify(Service):
         for album in albums:
             self.add_album(album)
 
-    # @todo unimplemented
     def get_playlists(self):
         api_url = self.api_url_base() + "/me/playlists"
 
@@ -216,15 +210,15 @@ class Spotify(Service):
                     id = playlist["id"]
                     title = playlist["name"]
 
-                    playlists.append(Playlist(id, title, "", []))
+                    playlists.append(Playlist(id, title, []))
 
                 return playlists
 
         playlists = Paginator(get_playlist_page, limit, total)
         print(playlists.records)
 
-        # for playlist in playlists:
-        #     self.add_playlist(playlist)
+        for playlist in playlists:
+            self.add_playlist(playlist)
 
     def auth_headers(self):
         return {"Authorization": f"Bearer {self.access_token}"}
