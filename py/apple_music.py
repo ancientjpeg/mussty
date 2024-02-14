@@ -96,7 +96,7 @@ class AppleMusic(Service):
         total = res.json()["meta"]["total"]
         limit = 100
 
-        async def get_tracks_page(index: int, offset: int, paginator: Paginator):
+        async def get_tracks_page(offset: int, paginator: Paginator):
 
             params = {
                 "offset": offset,

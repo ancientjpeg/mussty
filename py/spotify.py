@@ -123,7 +123,7 @@ class Spotify(Service):
         limit = 50
         total = res.json()["total"]
 
-        async def get_tracks_page(index: int, offset: int, paginator: Paginator):
+        async def get_tracks_page(offset: int, paginator: Paginator):
             params = {
                 "offset": offset,
                 "limit": limit,
@@ -167,14 +167,12 @@ class Spotify(Service):
             res = r.get(url=api_url, params=params, headers=self.auth_headers())
             body = res.json()
             for item in body["items"]:
-
                 album = item["album"]
-                id = album["id"]
-                title = album["name"]
-                artist_json = album["artists"][0]
-                artist: Artist = Artist(artist_json["id"], artist_json["name"])
 
-                self.add_album(Album(id, title, artist))
+                isrc = album["external_ids"]["isrc"]
+                title = album["name"]
+
+                self.add_album(Album(isrc, title))
             return body["next"]
 
         while get_albums_page():

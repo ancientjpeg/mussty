@@ -36,10 +36,8 @@ class Paginator:
             try:
                 async with aiohttp.ClientSession() as self.session:
                     async with asyncio.TaskGroup() as tg:
-                        for i in range(len(offsets)):
-                            task_result = tg.create_task(
-                                get_records_list(i, offsets[i], self)
-                            )
+                        for offset in offsets:
+                            task_result = tg.create_task(get_records_list(offset, self))
                             task_results.append(task_result)
 
                             # apple music does not like being flooded with a bunch of requests at once
