@@ -192,7 +192,6 @@ class AppleMusic(Service):
         for album in albums:
             self.add_song(album)
 
-    # @todo unimplemented
     def get_playlists(self):
         api_url = self.api_url_base() + "/me/library/playlists"
         res = r.get(api_url, headers=self.auth_headers(), params={"limit": 1})
@@ -204,75 +203,97 @@ class AppleMusic(Service):
             params = {
                 "offset": offset,
                 "limit": limit,
-                "include[library-songs]": ["catalog"],
-                "extend[songs]": ["isrc,name"],
             }
 
-            playlist_map: dict[str, Playlist] = {}
+            playlists: list[Playlist] = []
             async with paginator.session.get(
                 api_url, headers=self.auth_headers(), params=params
             ) as res:
                 print(f"Obtained response from {res.url}")
 
-                data = None
-                try:
-                    body = await res.json()
-                    data = body["data"]
-                except Exception as e:
-                    if res.status == 429:
-                        raise RuntimeError("Encountered rate limits.")
-                    raise e
+                if res.status == 429:
+                    raise RuntimeError("Encountered rate limits.")
+
+                body = await res.json()
+                data = body["data"]
 
                 for playlist_json in data:
 
+                    attrs = playlist_json["attributes"]
+
                     id = playlist_json["id"]
-                    name = playlist_json["attributes"]["name"]
+                    name = attrs["name"]
 
-                    playlist_map[id] = Playlist(id, name, [])
+                    # if attrs['hasCatalog'] == True:
+                    #     print(f'Skipped library playlist {name}')    
+                    #     continue
+                    # else:
+                    #     print(f'Got library playlist {name}')    
 
-                for id, _ in playlist_map.items():
-                    tracks_api_url = (
-                        self.api_url_base() + f"/me/library/playlists/{id}/tracks"
-                    )
+                    playlists.append(Playlist(id, name, []))
 
-                    tracks_offset = 0
-                    while True:
-                        tracks_params = {
-                            "offset": offset,
-                            "limit": limit,
-                            "include[library-songs]": "catalog",
-                            "extend[songs]": "isrc,name",
-                        }
-                        async with paginator.session.get(
-                            tracks_api_url,
-                            headers=self.auth_headers(),
-                            params=tracks_params,
-                        ) as res:
-                            body = await res.json()
-                            total = body["meta"]["total"]
+            return playlists
 
-                            for track in body["data"]:
+        def get_songs_for_playlist_by_id(playlist: Playlist): 
+            async def get_songs_for_playlist(offset: int, paginator: Paginator):
+                tracks_api_url =  self.api_url_base() + f"/me/library/playlists/{playlist.id}/tracks"
 
-                                if track["type"] == "library-music-videos":
-                                    continue
+                tracks_params = {
+                    "offset": offset,
+                    "limit": limit,
+                    "include[library-songs]": "catalog",
+                    "extend[songs]": "isrc,name",
+                }
 
-                                data = track["relationships"]["catalog"]["data"]
+                playlist_songs = []
 
-                                if len(data) == 0:
-                                    continue
-                                attrs = data[0]["attributes"]
-                                playlist_map[id].songs.append(
-                                    Song(attrs["isrc"], attrs["name"], "")
-                                )
+                async with paginator.session.get(
+                    tracks_api_url,
+                    headers=self.auth_headers(),
+                    params=tracks_params,
+                ) as res:
+                    body = await res.json()
 
-                            tracks_offset += limit
-                            if tracks_offset >= total:
-                                break
+                    try:
+                        for track in body["data"]:
 
-            return playlist_map.values()
+                            if track["type"] == "library-music-videos":
+                                continue
 
-        playlists = Paginator(get_playlists_page, limit, total)
-        for playlist in playlists:
+                            data = track["relationships"]["catalog"]["data"]
+
+                            if len(data) == 0:
+                                continue
+
+                            attrs = data[0]["attributes"]
+
+                            playlist_songs.append(Song(attrs["isrc"], attrs["name"], ""))
+                    except KeyError:
+                        print(body['errors'])
+                        print(f"Got error response for playlist {playlist.title}")
+                    
+                return playlist_songs
+
+
+
+            return get_songs_for_playlist
+
+
+        all_playlists_pag = Paginator(get_playlists_page, limit, total)
+        all_playlists = all_playlists_pag.records
+        for playlist in all_playlists:
+            playlist_tracks_api_url =  self.api_url_base() + f"/me/library/playlists/{playlist.id}/tracks"
+
+            
+            res = r.get(playlist_tracks_api_url, headers=self.auth_headers(), params={"limit": 1})
+            total = res.json()["meta"]["total"]
+            limit = 100
+
+            playlist_songs_pag = Paginator(get_songs_for_playlist_by_id(playlist), limit=limit, total=total)
+            playlist.songs = playlist_songs_pag
+            
+
+        for playlist in all_playlists:
             self.add_playlist(playlist)
 
     def auth_headers(self):
