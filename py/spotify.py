@@ -17,9 +17,6 @@ class SpotifyUserAuthHTTPRequestHandler(UserAuthHTTPRequestHandlerBase):
         self.return_successfully()
 
 
-class SpotifyUserAuthHandler(UserAuthHandler):
-    def __init__(self, auth_url: str) -> None:
-        super().__init__()
 
 
 class Spotify(Service):
