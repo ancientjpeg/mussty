@@ -65,7 +65,7 @@ class Service:
         try:
             id = record.isrc
         except:
-            id = record.upc
+            id = record.id
 
         if id in list:
             # print(f"duplicate records: {record.title} --- {list[record.isrc].title}")

@@ -18,7 +18,7 @@ class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
 
     @UserAuthHTTPRequestHandlerBase.do_GET_decorator
     def do_GET(self):
-        path = self.server.parsed_path.path
+        path = self.auth_server.parsed_path.path
         match path:
             case "/":
                 self.send_response(200)
@@ -31,7 +31,7 @@ class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
                 self.return_successfully()
             case _:
                 self.send_response(400)
-                self.server.event.set()
+                self.auth_server.event.set()
                 raise RuntimeError("Unexpected callback path used.")
 
 
@@ -203,15 +203,16 @@ class AppleMusic(Service):
 
             params = {
                 "offset": offset,
-                "limit": 100,
+                "limit": limit,
                 "include[library-songs]": ["catalog"],
                 "extend[songs]": ["isrc,name"],
             }
 
-            playlist_map ={} 
+            playlist_map: dict[str, Playlist] = {}
             async with paginator.session.get(
                 api_url, headers=self.auth_headers(), params=params
             ) as res:
+                print(f"Obtained response from {res.url}")
 
                 data = None
                 try:
@@ -229,13 +230,50 @@ class AppleMusic(Service):
 
                     playlist_map[id] = Playlist(id, name, [])
 
-            async with paginator.session.get():
+                for id, _ in playlist_map.items():
+                    tracks_api_url = (
+                        self.api_url_base() + f"/me/library/playlists/{id}/tracks"
+                    )
 
-            return playlist_map
+                    tracks_offset = 0
+                    while True:
+                        tracks_params = {
+                            "offset": offset,
+                            "limit": limit,
+                            "include[library-songs]": "catalog",
+                            "extend[songs]": "isrc,name",
+                        }
+                        async with paginator.session.get(
+                            tracks_api_url,
+                            headers=self.auth_headers(),
+                            params=tracks_params,
+                        ) as res:
+                            body = await res.json()
+                            total = body["meta"]["total"]
+
+                            for track in body["data"]:
+
+                                if track["type"] == "library-music-videos":
+                                    continue
+
+                                data = track["relationships"]["catalog"]["data"]
+
+                                if len(data) == 0:
+                                    continue
+                                attrs = data[0]["attributes"]
+                                playlist_map[id].songs.append(
+                                    Song(attrs["isrc"], attrs["name"], "")
+                                )
+
+                            tracks_offset += limit
+                            if tracks_offset >= total:
+                                break
+
+            return playlist_map.values()
 
         playlists = Paginator(get_playlists_page, limit, total)
         for playlist in playlists:
-            self.add_song(playlist)
+            self.add_playlist(playlist)
 
     def auth_headers(self):
         return {
