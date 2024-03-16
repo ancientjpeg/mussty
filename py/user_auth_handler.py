@@ -17,7 +17,6 @@ class UserAuthHTTPServer(HTTPServer):
 
 
 class UserAuthHTTPRequestHandlerBase(BaseHTTPRequestHandler):
-
     auth_server: UserAuthHTTPServer  # annotate the pre-existing server var
 
     # use this to decorate handler methods
@@ -45,14 +44,11 @@ class UserAuthHTTPRequestHandlerBase(BaseHTTPRequestHandler):
 
 
 class UserAuthHandler:
-
     auth_server: UserAuthHTTPServer
 
     # constructor is non-blocking.
     def __init__(self, auth_url: str, request_handler_type) -> None:
-        self.auth_server  = UserAuthHTTPServer(
-            ("localhost", 8005), request_handler_type
-        )
+        self.auth_server = UserAuthHTTPServer(("localhost", 8005), request_handler_type)
         self.auth_server.event = threading.Event()
         self.server_thread: threading.Thread = threading.Thread(
             None, target=self.auth_server.serve_forever, daemon=True

@@ -1,11 +1,6 @@
-from .spotify import Spotify
 from .apple_music import AppleMusic
-from time import sleep
+from .resolver import Resolver
+from .spotify import Spotify
 
 if __name__ == "__main__":
-    apple_music = AppleMusic()
-    # apple_music.get_user_content()
-    apple_music.get_playlists()
-
-    # spotify = Spotify()
-    # spotify.get_user_content()
+    resolver = Resolver((AppleMusic, Spotify))

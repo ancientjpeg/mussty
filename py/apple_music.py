@@ -15,7 +15,6 @@ import aiohttp
 
 
 class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
-
     @UserAuthHTTPRequestHandlerBase.do_GET_decorator
     def do_GET(self):
         path = self.auth_server.parsed_path.path
@@ -36,7 +35,6 @@ class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
 
 
 class AppleMusic(Service):
-
     private_key: str
     auth_jwt: str
     music_user_token: str
@@ -98,7 +96,6 @@ class AppleMusic(Service):
         limit = 100
 
         async def get_tracks_page(offset: int, paginator: Paginator):
-
             params = {
                 "offset": offset,
                 "limit": 100,
@@ -112,7 +109,6 @@ class AppleMusic(Service):
             async with paginator.session.get(
                 api_url, headers=self.auth_headers(), params=params
             ) as res:
-
                 data = None
                 try:
                     body = await res.json()
@@ -123,7 +119,6 @@ class AppleMusic(Service):
                     raise e
 
                 for track_json in data:
-
                     data = track_json["relationships"]["catalog"]["data"]
                     album_data = track_json["relationships"]["albums"]["data"][0]
                     catalog_album_data = album_data["relationships"]["catalog"]["data"]
@@ -152,7 +147,6 @@ class AppleMusic(Service):
         limit = 100
 
         async def get_albums_page(offset: int, paginator: Paginator):
-
             params = {
                 "offset": offset,
                 "limit": 100,
@@ -164,7 +158,6 @@ class AppleMusic(Service):
             async with paginator.session.get(
                 api_url, headers=self.auth_headers(), params=params
             ) as res:
-
                 data = None
                 try:
                     body = await res.json()
@@ -175,7 +168,6 @@ class AppleMusic(Service):
                     raise e
 
                 for track_json in data:
-
                     data = track_json["relationships"]["catalog"]["data"]
 
                     if len(data) == 0:
@@ -199,7 +191,6 @@ class AppleMusic(Service):
         limit = 100
 
         async def get_playlists_page(offset: int, paginator: Paginator):
-
             params = {
                 "offset": offset,
                 "limit": limit,
@@ -218,25 +209,26 @@ class AppleMusic(Service):
                 data = body["data"]
 
                 for playlist_json in data:
-
                     attrs = playlist_json["attributes"]
 
                     id = playlist_json["id"]
                     name = attrs["name"]
 
                     # if attrs['hasCatalog'] == True:
-                    #     print(f'Skipped library playlist {name}')    
+                    #     print(f'Skipped library playlist {name}')
                     #     continue
                     # else:
-                    #     print(f'Got library playlist {name}')    
+                    #     print(f'Got library playlist {name}')
 
                     playlists.append(Playlist(id, name, []))
 
             return playlists
 
-        def get_songs_for_playlist_by_id(playlist: Playlist): 
+        def get_songs_for_playlist_by_id(playlist: Playlist):
             async def get_songs_for_playlist(offset: int, paginator: Paginator):
-                tracks_api_url =  self.api_url_base() + f"/me/library/playlists/{playlist.id}/tracks"
+                tracks_api_url = (
+                    self.api_url_base() + f"/me/library/playlists/{playlist.id}/tracks"
+                )
 
                 tracks_params = {
                     "offset": offset,
@@ -256,7 +248,6 @@ class AppleMusic(Service):
 
                     try:
                         for track in body["data"]:
-
                             if track["type"] == "library-music-videos":
                                 continue
 
@@ -267,31 +258,36 @@ class AppleMusic(Service):
 
                             attrs = data[0]["attributes"]
 
-                            playlist_songs.append(Song(attrs["isrc"], attrs["name"], ""))
+                            playlist_songs.append(
+                                Song(attrs["isrc"], attrs["name"], "")
+                            )
                     except KeyError:
-                        print(body['errors'])
+                        print(body["errors"])
                         print(f"Got error response for playlist {playlist.title}")
-                    
+
                 return playlist_songs
 
-
-
             return get_songs_for_playlist
-
 
         all_playlists_pag = Paginator(get_playlists_page, limit, total)
         all_playlists = all_playlists_pag.records
         for playlist in all_playlists:
-            playlist_tracks_api_url =  self.api_url_base() + f"/me/library/playlists/{playlist.id}/tracks"
+            playlist_tracks_api_url = (
+                self.api_url_base() + f"/me/library/playlists/{playlist.id}/tracks"
+            )
 
-            
-            res = r.get(playlist_tracks_api_url, headers=self.auth_headers(), params={"limit": 1})
+            res = r.get(
+                playlist_tracks_api_url,
+                headers=self.auth_headers(),
+                params={"limit": 1},
+            )
             total = res.json()["meta"]["total"]
             limit = 100
 
-            playlist_songs_pag = Paginator(get_songs_for_playlist_by_id(playlist), limit=limit, total=total)
+            playlist_songs_pag = Paginator(
+                get_songs_for_playlist_by_id(playlist), limit=limit, total=total
+            )
             playlist.songs = playlist_songs_pag
-            
 
         for playlist in all_playlists:
             self.add_playlist(playlist)

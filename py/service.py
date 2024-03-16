@@ -61,7 +61,6 @@ class Service:
         self.add_generic(playlist, self.playlists)
 
     def add_generic(self, record, list):
-
         try:
             id = record.isrc
         except:

@@ -11,12 +11,9 @@ import webbrowser
 
 
 class SpotifyUserAuthHTTPRequestHandler(UserAuthHTTPRequestHandlerBase):
-
     @UserAuthHTTPRequestHandlerBase.do_GET_decorator
     def do_GET(self):
         self.return_successfully()
-
-
 
 
 class Spotify(Service):
@@ -75,7 +72,6 @@ class Spotify(Service):
         secrets.set(secrets_json)
 
     def get_token(self):
-
         handler = UserAuthHandler(self.auth_url(), SpotifyUserAuthHTTPRequestHandler)
         auth_code = handler.get_auth_params()["code"]
 
@@ -131,7 +127,6 @@ class Spotify(Service):
             async with paginator.session.get(
                 api_url, headers=self.auth_headers(), params=params
             ) as res:
-
                 try:
                     body = await res.json()
                 except Exception as e:
@@ -161,7 +156,6 @@ class Spotify(Service):
         total = res.json()["total"]
 
         async def get_albums_page(offset: int, paginator: Paginator):
-
             albums = []
             params = {"limit": limit, "offset": offset}
             async with paginator.session.get(
@@ -200,7 +194,6 @@ class Spotify(Service):
             ) as res:
                 body = await res.json()
                 for playlist in body["items"]:
-
                     if playlist["owner"]["id"] != self.user_id:
                         continue
 
