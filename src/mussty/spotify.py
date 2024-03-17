@@ -129,7 +129,7 @@ class Spotify(Service):
                 try:
                     body = await res.json()
                 except Exception as e:
-                    if res.status_code == 429:
+                    if res.status == 429:
                         raise RuntimeError("Encountered rate limits. Aborting")
                     raise e
 
@@ -138,7 +138,7 @@ class Spotify(Service):
                     isrc = track["external_ids"]["isrc"]
                     title = track["name"]
 
-                    tracks.append(Song(isrc, title))
+                    tracks.append(Song(isrc, title, ""))
 
             return tracks
 

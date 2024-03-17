@@ -119,6 +119,7 @@ class Service:
 
         with open(self.cachefile) as f:
             data = json.load(f)
+            data = data[self.json_tagname]
 
             try:
                 self.songs = {
@@ -139,6 +140,9 @@ class Service:
                 )
                 return False
 
+        print(
+            f"Successfully retrieved cache for service instance of type {self.__class__.__name__}"
+        )
         return True
 
     def cache_self(self):
