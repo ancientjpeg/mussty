@@ -9,7 +9,7 @@ def test_song_serialization():
 
     assert song_data["isrc"] == "test_isrc"
 
-    song_deserialized = Song.from_json(song_data)
+    song_deserialized = Song.from_dict(song_data)
 
     assert song_deserialized.album_upc == "test_album_upc"
     assert song_deserialized.album_upc == song_data["album_upc"]
@@ -21,7 +21,7 @@ def test_album_serialization():
 
     assert album_data["upc"] == "test_upc"
 
-    album_deserialized = Album.from_json(album_data)
+    album_deserialized = Album.from_dict(album_data)
 
     assert album_deserialized.upc == "test_upc"
     assert album_deserialized.upc == album_data["upc"]
@@ -40,7 +40,7 @@ def test_playlist_serialization():
 
     assert playlist_data["title"] == "test_title"
 
-    playlist_deserialized = Playlist.from_json(playlist_data)
+    playlist_deserialized = Playlist.from_dict(playlist_data)
 
     assert playlist_deserialized.title == "test_title"
     assert playlist_deserialized.title == playlist_data["title"]

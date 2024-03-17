@@ -23,7 +23,7 @@ class Song:
         return self.__dict__
 
     @staticmethod
-    def from_json(song_json: dict) -> "Song":
+    def from_dict(song_json: dict) -> "Song":
         return Song(
             song_json["isrc"],
             song_json["title"],
@@ -40,7 +40,7 @@ class Album:
         return self.__dict__
 
     @staticmethod
-    def from_json(album_json: dict) -> "Album":
+    def from_dict(album_json: dict) -> "Album":
         return Album(
             album_json["upc"],
             album_json["title"],
@@ -52,6 +52,7 @@ class Playlist:
     id: str
     title: str
     songs: list[Song]
+    CACHE: bool = True
 
     def to_dict(self):
         data = self.__dict__.copy()
@@ -59,9 +60,9 @@ class Playlist:
         return data
 
     @staticmethod
-    def from_json(playlist_json: dict) -> "Playlist":
+    def from_dict(playlist_json: dict) -> "Playlist":
         songs_json = playlist_json["songs"]
-        songs = [Song.from_json(song) for song in songs_json]
+        songs = [Song.from_dict(song) for song in songs_json]
 
         return Playlist(
             playlist_json["id"],
@@ -120,13 +121,36 @@ class Service:
         with open(self.cachefile) as f:
             data = json.load(f)
 
+            try:
+                self.songs = {
+                    song["isrc"]: Song.from_dict(song) for song in data["songs"]
+                }
+
+                self.albums = {
+                    album["upc"]: Album.from_dict(album) for album in data["albums"]
+                }
+
+                self.playlists = {
+                    playlist["id"]: Playlist.from_dict(playlist)
+                    for playlist in data["playlists"]
+                }
+            except KeyError:
+                print(
+                    f"Failed to un-cache service instance of type {self.__class__.__name__}"
+                )
+
     def cache_self(self):
         cached_self = {}
-        cached_self["songs"] = self.songs
-        cached_self["albums"] = self.albums
+        cached_self["songs"] = [song.to_dict() for _, song in self.songs.items()]
+        cached_self["albums"] = [album.to_dict() for _, album in self.albums.items()]
+        cached_self["playlists"] = [
+            playlist.to_dict() for _, playlist in self.playlists.items()
+        ]
 
         with open(self.cachefile, "r+") as f:
             data = json.load(f)
+
+            data[self.json_tagname] = cached_self
 
             f.seek(0)
             f.truncate(0)
