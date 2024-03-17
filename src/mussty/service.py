@@ -18,15 +18,27 @@ class Song:
     isrc: str
     title: str
     album_upc: str
-    ean: str = ""
-    upc: str = ""
+
+    @staticmethod
+    def from_json(song_json: dict) -> "Song":
+        return Song(
+            song_json["isrc"],
+            song_json["title"],
+            song_json["album_upc"],
+        )
 
 
 @dataclass
 class Album:
     upc: str
     title: str
-    ean: str = ""
+
+    @staticmethod
+    def from_json(album_json: dict) -> "Album":
+        return Album(
+            album_json["upc"],
+            album_json["title"],
+        )
 
 
 @dataclass
@@ -34,6 +46,17 @@ class Playlist:
     id: str
     title: str
     songs: list[Song]
+
+    @staticmethod
+    def from_json(playlist_json: dict) -> "Playlist":
+        songs_json = playlist_json["songs"]
+        songs = [Song.from_json(song) for song in songs_json]
+
+        return Playlist(
+            playlist_json["id"],
+            playlist_json["title"],
+            songs,
+        )
 
 
 class Service:
