@@ -1,5 +1,5 @@
 secrets.json
-service_cache.json
+cache.json
 test.sh
 *.p8
 **/__pycache__

@@ -52,7 +52,6 @@ class Playlist:
     id: str
     title: str
     songs: list[Song]
-    CACHE: bool = True
 
     def to_dict(self):
         data = self.__dict__.copy()
@@ -77,7 +76,8 @@ class Service:
     albums: dict[str, Album]
     playlists: dict[str, Playlist]
     json_tagname: str
-    cachefile: Path = Path("./cache.json")
+    cachefile: Path = Path("../cache.json")
+    CACHE: bool = True
 
     def __init__(self):
         self.songs = {}
@@ -90,34 +90,33 @@ class Service:
             self.json_tagname = self.__class__.__name__.lower()
 
     def get_user_content(self):
+        needs_content_refresh = False
+        if self.CACHE:
+            needs_content_refresh = not self.uncache_self()
+
         # @todo just calling these and hoping they're implemented is horrifically stupid, look into @abstractmethod
-        self.get_tracks()
-        self.get_albums()
-        self.get_playlists()
-        self.cache_self()
+        if needs_content_refresh:
+            self.get_tracks()
+            self.get_albums()
+            self.get_playlists()
+
+        if self.CACHE and needs_content_refresh:
+            self.cache_self()
 
     def add_album(self, album: Album):
-        self.add_generic(album, self.albums)
+        self.albums[album.upc] = album
 
     def add_song(self, song: Song):
-        self.add_generic(song, self.songs)
+        self.songs[song.isrc] = song
 
     def add_playlist(self, playlist: Playlist):
-        self.add_generic(playlist, self.playlists)
-
-    def add_generic(self, record, list):
-        try:
-            id = record.isrc
-        except:
-            id = record.id
-
-        if id in list:
-            # print(f"duplicate records: {record.title} --- {list[record.isrc].title}")
-            return
-
-        list[id] = record
+        self.playlists[playlist.id] = playlist
 
     def uncache_self(self):
+        if not self.cachefile.exists():
+            print(f"No cache exists for service of type {self.__class__.__name__}")
+            return False
+
         with open(self.cachefile) as f:
             data = json.load(f)
 
@@ -138,6 +137,9 @@ class Service:
                 print(
                     f"Failed to un-cache service instance of type {self.__class__.__name__}"
                 )
+                return False
+
+        return True
 
     def cache_self(self):
         cached_self = {}
@@ -147,8 +149,15 @@ class Service:
             playlist.to_dict() for _, playlist in self.playlists.items()
         ]
 
-        with open(self.cachefile, "r+") as f:
-            data = json.load(f)
+        if not self.cachefile.exists():
+            with self.cachefile.open("w+") as f:
+                pass
+
+        with self.cachefile.open("r+") as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                data = {}
 
             data[self.json_tagname] = cached_self
 

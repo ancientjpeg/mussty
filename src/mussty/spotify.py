@@ -1,5 +1,5 @@
 from . import secrets
-from .service import Service, Artist, Album, Song, Playlist
+from .service import Service, Album, Song, Playlist
 from .user_auth_handler import (
     UserAuthHandler,
     UserAuthHTTPRequestHandlerBase,
@@ -7,7 +7,6 @@ from .user_auth_handler import (
 import base64
 import requests as r
 from .helpers.paginator import Paginator
-import webbrowser
 
 
 class SpotifyUserAuthHTTPRequestHandler(UserAuthHTTPRequestHandlerBase):

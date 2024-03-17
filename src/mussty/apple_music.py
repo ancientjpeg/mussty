@@ -6,12 +6,8 @@ from .user_auth_handler import (
     UserAuthHTTPRequestHandlerBase,
 )
 from datetime import datetime, timedelta
-import json
 import jwt
-import re
 import requests as r
-import asyncio
-import aiohttp
 
 
 class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
@@ -182,7 +178,7 @@ class AppleMusic(Service):
 
         albums = Paginator(get_albums_page, limit, total)
         for album in albums:
-            self.add_song(album)
+            self.add_album(album)
 
     def get_playlists(self):
         api_url = self.api_url_base() + "/me/library/playlists"
