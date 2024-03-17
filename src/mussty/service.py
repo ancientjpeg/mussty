@@ -19,6 +19,9 @@ class Song:
     title: str
     album_upc: str
 
+    def to_dict(self):
+        return self.__dict__
+
     @staticmethod
     def from_json(song_json: dict) -> "Song":
         return Song(
@@ -33,6 +36,9 @@ class Album:
     upc: str
     title: str
 
+    def to_dict(self):
+        return self.__dict__
+
     @staticmethod
     def from_json(album_json: dict) -> "Album":
         return Album(
@@ -46,6 +52,11 @@ class Playlist:
     id: str
     title: str
     songs: list[Song]
+
+    def to_dict(self):
+        data = self.__dict__.copy()
+        data["songs"] = [song.to_dict() for song in data["songs"]]
+        return data
 
     @staticmethod
     def from_json(playlist_json: dict) -> "Playlist":
