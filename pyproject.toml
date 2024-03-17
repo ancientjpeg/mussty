@@ -11,5 +11,8 @@ dynamic = ["version"]
 addopts = [
     "--import-mode=importlib",
 ]
+pythonpath = [
+  "src"
+]
 
 [tool.hatch]
