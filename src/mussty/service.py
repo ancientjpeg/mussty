@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from pathlib import Path
+import json
 
 
 class LocalLibraryContentError(Exception):
@@ -40,6 +42,7 @@ class Service:
     albums: dict[str, Album]
     playlists: dict[str, Playlist]
     json_tagname: str
+    cachefile: Path = Path("./cache.json")
 
     def __init__(self):
         self.songs = {}
@@ -56,6 +59,7 @@ class Service:
         self.get_tracks()
         self.get_albums()
         self.get_playlists()
+        self.cache_self()
 
     def add_album(self, album: Album):
         self.add_generic(album, self.albums)
@@ -77,3 +81,20 @@ class Service:
             return
 
         list[id] = record
+
+    def uncache_self(self):
+        with open(self.cachefile) as f:
+            data = json.load(f)
+
+    def cache_self(self):
+        cached_self = {}
+        cached_self["songs"] = self.songs
+        cached_self["albums"] = self.albums
+
+        with open(self.cachefile, "r+") as f:
+            data = json.load(f)
+
+            f.seek(0)
+            f.truncate(0)
+
+            json.dump(data, f)
