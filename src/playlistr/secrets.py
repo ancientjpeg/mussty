@@ -3,7 +3,7 @@ import json
 
 class Secrets:
     secrets: dict = None
-    secrets_file = "secrets.json"
+    secrets_file = "../secrets.json"
 
     @classmethod
     def get(cls):
