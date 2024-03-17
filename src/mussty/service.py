@@ -39,11 +39,17 @@ class Service:
     songs: dict[str, Song]
     albums: dict[str, Album]
     playlists: dict[str, Playlist]
+    json_tagname: str
 
     def __init__(self):
         self.songs = {}
         self.playlists = {}
         self.albums = {}
+
+        try:
+            self.json_tagname = self.get_json_tagname()
+        except AttributeError:
+            self.json_tagname = self.__class__.__name__.lower()
 
     def get_user_content(self):
         # @todo just calling these and hoping they're implemented is horrifically stupid, look into @abstractmethod

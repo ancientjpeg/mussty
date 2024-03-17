@@ -20,8 +20,8 @@ class Resolver:
         service_a = types[0]()
         service_b = types[1]()
 
-        service_a.get_user_content()
-        service_b.get_user_content()
+        # service_a.get_user_content()
+        # service_b.get_user_content()
 
     def resolve_songs(self):
         target_song_ids = set(self.service_a.songs.keys()) - set(

@@ -299,5 +299,9 @@ class AppleMusic(Service):
         }
 
     @staticmethod
+    def get_json_tagname():
+        return "apple_music"
+
+    @staticmethod
     def api_url_base():
         return "https://api.music.apple.com/v1"
