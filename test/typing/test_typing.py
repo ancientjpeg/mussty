@@ -1,8 +1,8 @@
-from playlistr import Service
-
-# from playlistr.spotify import Spotify
-# from playlistr.apple_music import AppleMusic
+from playlistr.service import Service
+from playlistr.spotify import Spotify
+from playlistr.apple_music import AppleMusic
 
 
 def test_typing():
-    return Service == Service
+    assert issubclass(Spotify, Service)
+    assert issubclass(AppleMusic, Service)
