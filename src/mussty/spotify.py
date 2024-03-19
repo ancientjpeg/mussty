@@ -1,5 +1,6 @@
 from . import secrets
-from .service import Service, Album, Song, Playlist
+from .define.types import *
+from .service import Service
 from .user_auth_handler import (
     UserAuthHandler,
     UserAuthHTTPRequestHandlerBase,
@@ -212,7 +213,7 @@ class Spotify(Service):
     def auth_headers(self):
         return {"Authorization": f"Bearer {self.access_token}"}
 
-    def auth_url(self):
+    def auth_url(self) -> str:
         params = {
             "client_id": self.client_id,
             "response_type": "code",
@@ -227,7 +228,8 @@ class Spotify(Service):
             headers=headers,
         )
 
-        return req.prepare().url
+        url: str | None = req.prepare().url
+        return url if url else ""
 
     @staticmethod
     def api_url_base():
