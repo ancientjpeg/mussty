@@ -105,4 +105,4 @@ class Service:
             f.seek(0)
             f.truncate(0)
 
-            json.dump(data, f)
+            json.dump(data, f, indent=2)
