@@ -2,6 +2,7 @@ from mussty.service import Service
 from mussty.define.types import *
 from pathlib import Path
 from uuid import uuid4
+import tempfile
 
 
 def gen_song():
@@ -18,7 +19,7 @@ def gen_playlist():
 
 
 class CachingService(Service):
-    cachefile = Path("test_cache.json")
+    cachefile = Path(tempfile.gettempdir()) / "test_cache.json"
     pass
 
 
