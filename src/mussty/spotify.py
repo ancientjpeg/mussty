@@ -1,5 +1,6 @@
 from . import secrets
-from .service import Service, Artist, Album, Song, Playlist
+from .define.types import *
+from .service import Service
 from .user_auth_handler import (
     UserAuthHandler,
     UserAuthHTTPRequestHandlerBase,
@@ -7,7 +8,6 @@ from .user_auth_handler import (
 import base64
 import requests as r
 from .helpers.paginator import Paginator
-import webbrowser
 
 
 class SpotifyUserAuthHTTPRequestHandler(UserAuthHTTPRequestHandlerBase):
@@ -130,7 +130,7 @@ class Spotify(Service):
                 try:
                     body = await res.json()
                 except Exception as e:
-                    if res.status_code == 429:
+                    if res.status == 429:
                         raise RuntimeError("Encountered rate limits. Aborting")
                     raise e
 
@@ -139,7 +139,7 @@ class Spotify(Service):
                     isrc = track["external_ids"]["isrc"]
                     title = track["name"]
 
-                    tracks.append(Song(isrc, title))
+                    tracks.append(Song(isrc, title, ""))
 
             return tracks
 
@@ -213,7 +213,7 @@ class Spotify(Service):
     def auth_headers(self):
         return {"Authorization": f"Bearer {self.access_token}"}
 
-    def auth_url(self):
+    def auth_url(self) -> str:
         params = {
             "client_id": self.client_id,
             "response_type": "code",
@@ -228,7 +228,8 @@ class Spotify(Service):
             headers=headers,
         )
 
-        return req.prepare().url
+        url: str | None = req.prepare().url
+        return url if url else ""
 
     @staticmethod
     def api_url_base():

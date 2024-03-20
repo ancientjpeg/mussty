@@ -1,4 +1,5 @@
 secrets.json
+cache.json
 test.sh
 *.p8
 **/__pycache__

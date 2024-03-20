@@ -1,4 +1,5 @@
-from .service import Album, Playlist, Service, Song
+from .define.types import *
+from .service import Service
 
 
 class Resolver:
