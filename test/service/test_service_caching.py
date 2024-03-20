@@ -1,5 +1,5 @@
-from playlistr.service import Service
-from playlistr.define.types import *
+from mussty.service import Service
+from mussty.define.types import *
 
 
 def test_service_caching():

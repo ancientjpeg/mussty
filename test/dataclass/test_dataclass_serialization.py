@@ -1,6 +1,6 @@
 import dataclasses
-from playlistr.service import *
-from playlistr.resolver import *
+from mussty.service import *
+from mussty.resolver import *
 
 
 def test_song_serialization():
