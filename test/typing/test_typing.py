@@ -1,6 +1,6 @@
-from playlistr.service import Service
-from playlistr.spotify import Spotify
-from playlistr.apple_music import AppleMusic
+from mussty.service import Service
+from mussty.spotify import Spotify
+from mussty.apple_music import AppleMusic
 
 
 def test_typing():

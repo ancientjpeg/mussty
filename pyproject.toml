@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "playlistr"
+name = "mussty"
 description = "A streaming service migration CLI tool."
 dynamic = ["version"]
 

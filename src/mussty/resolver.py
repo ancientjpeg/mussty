@@ -11,7 +11,7 @@ class Resolver:
 
     def __init__(self, types: tuple[type, type], config: dict = {}) -> None:
         if not issubclass(types[0], Service) or not issubclass(types[1], Service):
-            raise TypeError("Services must be derived from playlistr.service")
+            raise TypeError("Services must be derived from mussty.service")
 
         print(
             f"Converting content from service {types[0].__name__} to service {types[1].__name__}"
