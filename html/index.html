@@ -25,12 +25,9 @@
       });
 
       let music = MusicKit.getInstance();
-      console.log(music);
       let token = await music.authorize();
-      console.log(token);
       window.location.href +=
         "authorize?music-user-token=" + encodeURIComponent(token);
-      console.log("kk");
     });
   </script>
 </html>
