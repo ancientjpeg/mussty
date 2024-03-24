@@ -6,6 +6,7 @@ import aiohttp
 class Paginator:
     lock: asyncio.Lock
     session: aiohttp.ClientSession
+    records: list
 
     def __init__(self, get_records_list, limit, total) -> None:
         self.lock = asyncio.Lock()

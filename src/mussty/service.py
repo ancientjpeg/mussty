@@ -27,7 +27,7 @@ class Service:
             self.json_tagname = self.__class__.__name__.lower()
 
     def get_user_content(self):
-        needs_content_refresh = False
+        needs_content_refresh = True
         if self.CACHE:
             needs_content_refresh = not self.uncache_self()
 
@@ -51,12 +51,17 @@ class Service:
 
     def uncache_self(self):
         if not self.cachefile.exists():
-            print(f"No cache exists for service of type {self.__class__.__name__}")
+            print(f"Cachefile does not exist.")
             return False
 
         with open(self.cachefile) as f:
             data = json.load(f)
-            data = data[self.json_tagname]
+
+            try:
+                data = data[self.json_tagname]
+            except KeyError:
+                print(f"No cache exists for service of type {self.__class__.__name__}")
+                return False
 
             try:
                 self.songs = {

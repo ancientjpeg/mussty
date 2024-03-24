@@ -17,30 +17,34 @@ class UserAuthHTTPServer(HTTPServer):
 
 
 class UserAuthHTTPRequestHandlerBase(BaseHTTPRequestHandler):
-    auth_server: UserAuthHTTPServer  # annotate the pre-existing server var
-
     # use this to decorate handler methods
     # be sure to do server.event.set() when you're totally done. @todo that's stupid, do nested decorators or something
     # @todo name this something that isn't stupid
     @staticmethod
     def do_GET_decorator(func):
         def self_wrapper(self: UserAuthHTTPRequestHandlerBase):
-            self.auth_server.parsed_path = parse.urlparse(self.path)
-            self.auth_server.query_dict = dict(
-                parse.parse_qsl(self.auth_server.parsed_path.query)
+            self.get_auth_server().parsed_path = parse.urlparse(self.path)
+            self.get_auth_server().query_dict = dict(
+                parse.parse_qsl(self.get_auth_server().parsed_path.query)
             )
             func(self)
 
         return self_wrapper
 
+    def get_auth_server(self) -> UserAuthHTTPServer:
+        if not isinstance(self.server, UserAuthHTTPServer):
+            raise TypeError(
+                "Must use UserAuthHTTPServer with UserAuthHTTPRequestHandlerBase"
+            )
+        return self.server
+
     def return_successfully(self):
         self.send_response(200)
         self.send_header("Content-type", "text/html")
-        print(self.auth_server.query_dict)
         self.end_headers()
-        with open("html/success.html") as f:
+        with open("../html/success.html") as f:
             self.wfile.write(f.read().encode())
-        self.auth_server.event.set()
+        self.get_auth_server().event.set()
 
 
 class UserAuthHandler:
