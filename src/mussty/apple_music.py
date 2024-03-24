@@ -283,7 +283,7 @@ class AppleMusic(Service):
             playlist_songs_pag = Paginator(
                 get_songs_for_playlist_by_id(playlist), limit=limit, total=total
             )
-            playlist.songs = playlist_songs_pag
+            playlist.songs = playlist_songs_pag.records
 
         for playlist in all_playlists:
             self.add_playlist(playlist)
