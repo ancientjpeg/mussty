@@ -6,6 +6,7 @@ import aiohttp
 class Paginator:
     lock: asyncio.Lock
     session: aiohttp.ClientSession
+    records: list
 
     def __init__(self, get_records_list, limit, total) -> None:
         self.lock = asyncio.Lock()
@@ -40,7 +41,7 @@ class Paginator:
                             task_results.append(task_result)
 
                             # apple music does not like being flooded with a bunch of requests at once
-                            await asyncio.sleep(0.05)
+                            await asyncio.sleep(0.01)
 
             except* Exception as e:
                 print(e.exceptions)
