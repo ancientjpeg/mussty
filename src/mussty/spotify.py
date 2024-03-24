@@ -1,13 +1,15 @@
 from . import secrets
 from .define.types import *
+from .helpers.paginator import Paginator
 from .service import Service
 from .user_auth_handler import (
     UserAuthHandler,
     UserAuthHTTPRequestHandlerBase,
 )
+import aiohttp
+import asyncio
 import base64
 import requests as r
-from .helpers.paginator import Paginator
 
 
 class SpotifyUserAuthHTTPRequestHandler(UserAuthHTTPRequestHandlerBase):
@@ -33,6 +35,8 @@ class Spotify(Service):
         self.access_token: str = ""
         self.refresh_token: str = ""
         self.user_id: str = ""
+
+        self.CACHE = False  # TODO delete and make this configurable
 
         has_tokens = True
         try:
@@ -111,7 +115,6 @@ class Spotify(Service):
 
     def get_tracks(self):
         api_url = self.api_url_base() + "/me/tracks"
-
         res = r.get(api_url, headers=self.auth_headers())
         limit = 50
         total = res.json()["total"]
@@ -122,7 +125,7 @@ class Spotify(Service):
                 "limit": limit,
             }
 
-            tracks = []
+            local_tracks = []
 
             async with paginator.session.get(
                 api_url, headers=self.auth_headers(), params=params
@@ -138,14 +141,61 @@ class Spotify(Service):
                     track = item["track"]
                     isrc = track["external_ids"]["isrc"]
                     title = track["name"]
+                    album_id = track["album"]["id"]
 
-                    tracks.append(Song(isrc, title, ""))
+                    local_tracks.append(Song(isrc, title, album_id))
 
-            return tracks
+            return local_tracks
 
-        tracks = Paginator(get_tracks_page, limit, total)
+        album_ids = set()
+        tracks_paged = Paginator(get_tracks_page, limit, total)
+        tracks: list[Song] = []
+
+        for track in tracks_paged:
+            tracks.append(track)
+            album_ids.add(track.album_upc)
+
+        # TODO consider an ordered set
+        album_ids = list(album_ids)
+
+        max_album_get_count = 20
+
+        async def get_album_upcs_page(offset: int, paginator: Paginator):
+            albums_api_url = self.api_url_base() + "/albums"
+            last_idx = min(offset + max_album_get_count, len(album_ids))
+
+            local_album_id_upc_pairs: list[tuple] = []
+
+            params = {"ids": ",".join(album_ids[offset:last_idx])}
+
+            async with paginator.session.get(
+                albums_api_url, headers=self.auth_headers(), params=params
+            ) as res:
+                try:
+                    body = await res.json()
+                except Exception as e:
+                    if res.status == 429:
+                        raise RuntimeError("Encountered rate limits. Aborting")
+                    raise e
+
+                try:
+                    for album in body["albums"]:
+                        id = album["id"]
+                        upc = album["external_ids"]["upc"]
+                        local_album_id_upc_pairs.append((id, upc))
+                except KeyError:
+                    print("no albums")
+
+            return local_album_id_upc_pairs
+
+        album_id_upc_pairs = Paginator(
+            get_album_upcs_page, limit=max_album_get_count, total=len(album_ids)
+        )
+
+        album_id_to_upc = {t[0]: t[1] for t in album_id_upc_pairs}
 
         for track in tracks:
+            track.album_upc = album_id_to_upc[track.album_upc]
             self.add_song(track)
 
     def get_albums(self):
