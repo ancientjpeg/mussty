@@ -13,21 +13,31 @@ import requests as r
 class AppleMusicUserAuthHTTPRequestHandlerBase(UserAuthHTTPRequestHandlerBase):
     @UserAuthHTTPRequestHandlerBase.do_GET_decorator
     def do_GET(self):
-        path = self.auth_server.parsed_path.path
+        path = self.path
+
+        # just the path, no query string
+        # TODO probably a more canonical way to do this
+        path = path.split("?")[0]
+
         match path:
             case "/":
                 self.send_response(200)
                 self.send_header("Content-type", "text/html")
                 self.end_headers()
-                with open("html/index.html") as f:
-                    self.wfile.write(f.read().encode())
+                with open("../html/index.html") as f:
+                    token = self.get_auth_server().apple_music_dev_token  # type:ignore
+                    file_contents = f.read()
+                    file_contents = file_contents.replace(
+                        "$DEVELOPER_TOKEN_PLACEHOLDER", token
+                    )
+                    self.wfile.write(file_contents.encode())
 
             case "/authorize":
                 self.return_successfully()
             case _:
                 self.send_response(400)
-                self.auth_server.event.set()
-                raise RuntimeError("Unexpected callback path used.")
+                self.get_auth_server().event.set()
+                raise RuntimeError(f"Unexpected callback path used: {path}")
 
 
 class AppleMusic(Service):
@@ -76,6 +86,10 @@ class AppleMusic(Service):
             handler = UserAuthHandler(
                 "http://localhost:8005", AppleMusicUserAuthHTTPRequestHandlerBase
             )
+
+            # TODO this is messy and hacky, please refactor.
+            handler.auth_server.apple_music_dev_token = self.auth_jwt  # type:ignore
+
             self.set_music_user_token(handler.get_auth_params()["music-user-token"])
 
     def set_music_user_token(self, token):
@@ -196,8 +210,6 @@ class AppleMusic(Service):
             async with paginator.session.get(
                 api_url, headers=self.auth_headers(), params=params
             ) as res:
-                print(f"Obtained response from {res.url}")
-
                 if res.status == 429:
                     raise RuntimeError("Encountered rate limits.")
 

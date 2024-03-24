@@ -10,15 +10,14 @@
     ></script>
   </head>
   <body>
-    kill your self
+    Authorize Apple Music manually >:(
     <button id="login-btn"></button>
   </body>
   <script>
     document.addEventListener("musickitloaded", async function () {
       // MusicKit global is now defined
       MusicKit.configure({
-        developerToken:
-          "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IldWQjk4NjUyRlEifQ.eyJpc3MiOiI3OTJUR0M3MjZLIiwiaWF0IjoxNzA3MDk2NzI3LCJleHAiOjE3MDc3MDE1Mjd9.kg9oJUV5DYwSlnlSu_TPQvRzlFC9xcqaGLfD__1v04AKkNhhvbTLAtPNeBJVYIAksshiVwtsQLIgwA-3bXDsiA",
+        developerToken: "$DEVELOPER_TOKEN_PLACEHOLDER",
         app: {
           name: "",
           build: "",
@@ -26,10 +25,12 @@
       });
 
       let music = MusicKit.getInstance();
+      console.log(music);
       let token = await music.authorize();
       console.log(token);
       window.location.href +=
         "authorize?music-user-token=" + encodeURIComponent(token);
+      console.log("kk");
     });
   </script>
 </html>
