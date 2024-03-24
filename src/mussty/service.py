@@ -51,12 +51,17 @@ class Service:
 
     def uncache_self(self):
         if not self.cachefile.exists():
-            print(f"No cache exists for service of type {self.__class__.__name__}")
+            print(f"Cachefile does not exist.")
             return False
 
         with open(self.cachefile) as f:
             data = json.load(f)
-            data = data[self.json_tagname]
+
+            try:
+                data = data[self.json_tagname]
+            except KeyError:
+                print(f"No cache exists for service of type {self.__class__.__name__}")
+                return False
 
             try:
                 self.songs = {

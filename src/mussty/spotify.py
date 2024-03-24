@@ -36,8 +36,6 @@ class Spotify(Service):
         self.refresh_token: str = ""
         self.user_id: str = ""
 
-        self.CACHE = False  # TODO delete and make this configurable
-
         has_tokens = True
         try:
             self.access_token = secrets.get()["spotify"]["access_token"]
@@ -250,14 +248,44 @@ class Spotify(Service):
                     id = playlist["id"]
                     title = playlist["name"]
 
-                    playlists.append(Playlist(id, title, []))
+                    # TODO this empty list way of doing things is hacky, please make it cleaner
+                    playlists.append(
+                        Playlist(id, title, [] * playlist["tracks"]["total"])
+                    )
 
                 return playlists
 
-        playlists = Paginator(get_playlist_page, limit, total)
-        print(playlists.records)
+        def get_songs_for_playlist_by_id(pl: Playlist):
+            async def get_songs_for_playlist(offset: int, paginator: Paginator):
+                playlist_tracks_url = self.api_url_base() + f"/playlists/{pl.id}/tracks"
 
-        for playlist in playlists:
+                playlist_tracks_page = []
+                params = {"limit": limit, "offset": offset}
+                async with paginator.session.get(
+                    playlist_tracks_url, headers=self.auth_headers(), params=params
+                ) as res:
+                    body = await res.json()
+                    for item in body["items"]:
+                        track = item["track"]
+                        isrc = track["external_ids"]["isrc"]
+                        title = track["name"]
+
+                        playlist_tracks_page.append(Song(isrc, title, ""))
+
+                return playlist_tracks_page
+
+            return get_songs_for_playlist
+
+        playlists_paged = Paginator(get_playlist_page, limit, total)
+        for playlist in playlists_paged:
+            track_count = len(playlist.songs)
+
+            playlist_tracks_paged = Paginator(
+                get_songs_for_playlist_by_id(playlist), total=track_count, limit=limit
+            )
+
+            playlist.songs = playlist_tracks_paged.records
+
             self.add_playlist(playlist)
 
     def auth_headers(self):
