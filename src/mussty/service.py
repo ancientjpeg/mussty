@@ -27,7 +27,7 @@ class Service:
             self.json_tagname = self.__class__.__name__.lower()
 
     def get_user_content(self):
-        needs_content_refresh = False
+        needs_content_refresh = True
         if self.CACHE:
             needs_content_refresh = not self.uncache_self()
 
