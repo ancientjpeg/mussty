@@ -24,6 +24,15 @@ class Resolver:
         service_a.get_user_content()
         service_b.get_user_content()
 
+
+    def resolve(self):
+        pass
+
+    def hydrate_services(self):
+        self.service_a.get_user_content()
+        self.service_b.get_user_content()
+
+
     def resolve_songs(self):
         target_song_ids = set(self.service_a.songs.keys()) - set(
             self.service_b.songs.keys()
