@@ -18,11 +18,17 @@ class Resolver:
             f"Converting content from service {types[0].__name__} to service {types[1].__name__}"
         )
 
-        service_a = types[0]()
-        service_b = types[1]()
+        self.service_a = types[0]()
+        self.service_b = types[1]()
 
-        service_a.get_user_content()
-        service_b.get_user_content()
+        self.hydrate_services()
+
+    def resolve(self):
+        self.resolve_songs()
+
+    def hydrate_services(self):
+        self.service_a.get_user_content()
+        self.service_b.get_user_content()
 
     def resolve_songs(self):
         target_song_ids = set(self.service_a.songs.keys()) - set(
