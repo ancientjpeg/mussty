@@ -4,3 +4,4 @@ from .spotify import Spotify
 
 if __name__ == "__main__":
     resolver = Resolver((AppleMusic, Spotify))
+    resolver.resolve()
